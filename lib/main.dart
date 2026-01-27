@@ -5,6 +5,7 @@ import 'providers/data_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/system_tray_service.dart';
+import 'services/task_automation_service.dart';
 import 'utils/constants.dart';
 import 'utils/theme.dart';
 
@@ -31,7 +32,18 @@ void main() async {
     await windowManager.focus();
   });
 
-  runApp(const SimpleDailyApp());
+  final dataProvider = DataProvider();
+  // Initialize Automation Service which keeps running
+  final automationService = TaskAutomationService(dataProvider);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: dataProvider),
+      ],
+      child: const SimpleDailyApp(),
+    ),
+  );
 }
 
 class SimpleDailyApp extends StatelessWidget {
@@ -39,16 +51,11 @@ class SimpleDailyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => DataProvider()),
-      ],
-      child: MaterialApp(
-        title: AppConstants.appName,
-        theme: AppTheme.darkTheme,
-        debugShowCheckedModeBanner: false,
-        home: const HomeScreen(),
-      ),
+    return MaterialApp(
+      title: AppConstants.appName,
+      theme: AppTheme.darkTheme,
+      debugShowCheckedModeBanner: false,
+      home: const HomeScreen(),
     );
   }
 }

@@ -89,4 +89,9 @@ class DataProvider extends ChangeNotifier {
   Future<void> _saveProjects() async {
     await _dataService.saveProjects(_projects);
   }
+
+  Future<void> saveData() async {
+    await _saveProjects();
+    await _saveNotes();
+  }
 }

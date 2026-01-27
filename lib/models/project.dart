@@ -8,8 +8,12 @@ class Task {
   String description;
   DateTime createdAt;
   DateTime? dueDate;
+  DateTime? startDate; // For automation start time
+  DateTime? endDate;   // For automation end time
   TaskPriority priority;
   List<String> tags;
+  String? appPath;     // For launching apps
+  List<String> imagePaths;
 
   Task({
     required this.id,
@@ -17,16 +21,24 @@ class Task {
     required this.description,
     required this.createdAt,
     this.dueDate,
+    this.startDate,
+    this.endDate,
     this.priority = TaskPriority.medium,
     this.tags = const [],
+    this.appPath,
+    this.imagePaths = const [],
   });
 
   factory Task.create({
     required String title,
     String description = '',
     DateTime? dueDate,
+    DateTime? startDate,
+    DateTime? endDate,
     TaskPriority priority = TaskPriority.medium,
     List<String> tags = const [],
+    String? appPath,
+    List<String> imagePaths = const [],
   }) {
     return Task(
       id: const Uuid().v4(),
@@ -34,8 +46,12 @@ class Task {
       description: description,
       createdAt: DateTime.now(),
       dueDate: dueDate,
+      startDate: startDate,
+      endDate: endDate,
       priority: priority,
       tags: tags,
+      appPath: appPath,
+      imagePaths: imagePaths,
     );
   }
 
@@ -45,8 +61,12 @@ class Task {
         'description': description,
         'createdAt': createdAt.toIso8601String(),
         'dueDate': dueDate?.toIso8601String(),
+        'startDate': startDate?.toIso8601String(),
+        'endDate': endDate?.toIso8601String(),
         'priority': priority.index,
         'tags': tags,
+        'appPath': appPath,
+        'imagePaths': imagePaths,
       };
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -56,8 +76,12 @@ class Task {
       description: json['description'],
       createdAt: DateTime.parse(json['createdAt']),
       dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : null,
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
       priority: TaskPriority.values[json['priority'] ?? 1],
       tags: List<String>.from(json['tags'] ?? []),
+      appPath: json['appPath'],
+      imagePaths: List<String>.from(json['imagePaths'] ?? []),
     );
   }
 }

@@ -58,7 +58,11 @@ class _KanbanBoardState extends State<KanbanBoard> {
     
     TaskPriority selectedPriority = TaskPriority.medium;
     final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
     final tagsController = TextEditingController(); 
+    final appPathController = TextEditingController();
+    DateTime? startDate;
+    DateTime? endDate;
 
     showDialog(
       context: context,
@@ -69,52 +73,193 @@ class _KanbanBoardState extends State<KanbanBoard> {
               backgroundColor: AppColors.surface,
               shape: const RoundedRectangleBorder(), // Rectangular Dialog
               title: const Text("New Task"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(
-                      hintText: "Task Title",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
-                    ),
-                    autofocus: true,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButton<TaskPriority>(
-                    value: selectedPriority,
-                    isExpanded: true,
-                    dropdownColor: AppColors.surface,
-                    items: TaskPriority.values.map((p) {
-                      return DropdownMenuItem(
-                        value: p,
-                        child: Text(
-                          p.toString().split('.').last.toUpperCase(),
-                          style: TextStyle(
-                            color: _getPriorityColor(p),
-                            fontWeight: FontWeight.bold,
-                          ),
+              content: SizedBox(
+                width: 500,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          hintText: "Task Title",
+                          labelText: "Title",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setDialogState(() => selectedPriority = val!);
-                    },
+                        autofocus: true,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Description
+                      TextField(
+                        controller: descriptionController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: "Description...",
+                          labelText: "Description",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Scheduling Row
+                      const Text("Schedule (Automation)", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: startDate ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (date != null) {
+                                  if (context.mounted) {
+                                    final time = await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.fromDateTime(startDate ?? DateTime.now()),
+                                    );
+                                    if (time != null) {
+                                      setDialogState(() {
+                                        startDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                                      });
+                                    }
+                                  }
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("Start Time", style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      startDate != null ? DateFormat('MM/dd HH:mm').format(startDate!) : "Set Start Time",
+                                      style: TextStyle(color: startDate != null ? AppColors.textPrimary : Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: endDate ?? (startDate ?? DateTime.now()),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (date != null) {
+                                  if (context.mounted) {
+                                    final time = await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.fromDateTime(endDate ?? DateTime.now()),
+                                    );
+                                    if (time != null) {
+                                      setDialogState(() {
+                                        endDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                                      });
+                                    }
+                                  }
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("End Time", style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      endDate != null ? DateFormat('MM/dd HH:mm').format(endDate!) : "Set End Time",
+                                      style: TextStyle(color: endDate != null ? AppColors.textPrimary : Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Automation: App Launch
+                      const Text("Automation", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: appPathController,
+                        decoration: const InputDecoration(
+                          hintText: "/path/to/application (e.g. /usr/bin/slack)",
+                          labelText: "App Path Execution",
+                          prefixIcon: Icon(Icons.apps, size: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<TaskPriority>(
+                              value: selectedPriority,
+                              decoration: const InputDecoration(
+                                labelText: "Priority",
+                                border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                              ),
+                              dropdownColor: AppColors.surface,
+                              items: TaskPriority.values.map((p) {
+                                return DropdownMenuItem(
+                                  value: p,
+                                  child: Text(
+                                    p.toString().split('.').last.toUpperCase(),
+                                    style: TextStyle(
+                                      color: _getPriorityColor(p),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setDialogState(() => selectedPriority = val!);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      TextField(
+                        controller: tagsController,
+                        decoration: const InputDecoration(
+                          hintText: "Tags (comma separated)",
+                          labelText: "Tags",
+                          prefixIcon: Icon(Icons.tag, size: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: tagsController,
-                    decoration: const InputDecoration(
-                      hintText: "Tags (comma separated)",
-                      prefixIcon: Icon(Icons.tag, size: 16),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    ),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                  ),
-                ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -133,8 +278,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       setState(() {
                         column.tasks.add(Task.create(
                           title: titleController.text,
+                          description: descriptionController.text,
                           priority: selectedPriority,
                           tags: tags,
+                          startDate: startDate,
+                          endDate: endDate,
+                          appPath: appPathController.text.isEmpty ? null : appPathController.text,
                         ));
                       });
                       _saveProject();
@@ -356,8 +505,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
 
   void _editTask(Task task) {
     final titleController = TextEditingController(text: task.title);
+    final descriptionController = TextEditingController(text: task.description);
     final tagsController = TextEditingController(text: task.tags.join(', '));
+    final appPathController = TextEditingController(text: task.appPath);
     TaskPriority selectedPriority = task.priority;
+    DateTime? startDate = task.startDate;
+    DateTime? endDate = task.endDate;
 
     showDialog(
       context: context,
@@ -368,53 +521,193 @@ class _KanbanBoardState extends State<KanbanBoard> {
               backgroundColor: AppColors.surface,
               shape: const RoundedRectangleBorder(),
               title: const Text("Edit Task"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(
-                      hintText: "Task Title",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
-                    ),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButton<TaskPriority>(
-                    value: selectedPriority,
-                    isExpanded: true,
-                    dropdownColor: AppColors.surface,
-                    items: TaskPriority.values.map((p) {
-                      return DropdownMenuItem(
-                        value: p,
-                        child: Text(
-                          p.toString().split('.').last.toUpperCase(),
-                          style: TextStyle(
-                            color: _getPriorityColor(p),
-                            fontWeight: FontWeight.bold,
-                          ),
+              content: SizedBox(
+                width: 500, // Wider for detailed fields
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          hintText: "Task Title",
+                          labelText: "Title",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setDialogState(() => selectedPriority = val);
-                      }
-                    },
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Description
+                      TextField(
+                        controller: descriptionController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: "Description...",
+                          labelText: "Description",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Scheduling Row
+                      const Text("Schedule (Automation)", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: startDate ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (date != null) {
+                                  if (context.mounted) {
+                                    final time = await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.fromDateTime(startDate ?? DateTime.now()),
+                                    );
+                                    if (time != null) {
+                                      setDialogState(() {
+                                        startDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                                      });
+                                    }
+                                  }
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("Start Time", style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      startDate != null ? DateFormat('MM/dd HH:mm').format(startDate!) : "Set Start Time",
+                                      style: TextStyle(color: startDate != null ? AppColors.textPrimary : Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: endDate ?? (startDate ?? DateTime.now()),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (date != null) {
+                                  if (context.mounted) {
+                                    final time = await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.fromDateTime(endDate ?? DateTime.now()),
+                                    );
+                                    if (time != null) {
+                                      setDialogState(() {
+                                        endDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                                      });
+                                    }
+                                  }
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("End Time", style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      endDate != null ? DateFormat('MM/dd HH:mm').format(endDate!) : "Set End Time",
+                                      style: TextStyle(color: endDate != null ? AppColors.textPrimary : Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Automation: App Launch
+                      const Text("Automation", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: appPathController,
+                        decoration: const InputDecoration(
+                          hintText: "/path/to/application (e.g. /usr/bin/slack)",
+                          labelText: "App Path Execution",
+                          prefixIcon: Icon(Icons.apps, size: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<TaskPriority>(
+                              value: selectedPriority,
+                              decoration: const InputDecoration(
+                                labelText: "Priority",
+                                border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                              ),
+                              dropdownColor: AppColors.surface,
+                              items: TaskPriority.values.map((p) {
+                                return DropdownMenuItem(
+                                  value: p,
+                                  child: Text(
+                                    p.toString().split('.').last.toUpperCase(),
+                                    style: TextStyle(
+                                      color: _getPriorityColor(p),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setDialogState(() => selectedPriority = val);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      TextField(
+                        controller: tagsController,
+                        decoration: const InputDecoration(
+                          hintText: "Tags (comma separated)",
+                          labelText: "Tags",
+                          prefixIcon: Icon(Icons.tag, size: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: tagsController,
-                    decoration: const InputDecoration(
-                      hintText: "Tags (comma separated)",
-                      prefixIcon: Icon(Icons.tag, size: 16),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    ),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                  ),
-                ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -445,8 +738,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       
                       setState(() {
                          task.title = titleController.text;
+                         task.description = descriptionController.text;
                          task.priority = selectedPriority;
                          task.tags = tags;
+                         task.startDate = startDate;
+                         task.endDate = endDate;
+                         task.appPath = appPathController.text.isEmpty ? null : appPathController.text;
                       });
                       _saveProject();
                       Navigator.pop(context);
