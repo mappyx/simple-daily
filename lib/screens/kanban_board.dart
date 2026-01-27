@@ -239,20 +239,21 @@ class _KanbanBoardState extends State<KanbanBoard> {
         ),
       ),
 
-      leftSide: const VerticalDivider(color: Colors.transparent, width: 12, thickness: 0),
+      leftSide: const VerticalDivider(color: Colors.transparent, width: 0, thickness: 0),
       rightSide: const VerticalDivider(color: Colors.transparent, width: 0, thickness: 0),
       children: List.generate(column.tasks.length, (i) {
         return _buildItem(column.tasks[i]);
       }),
       contentsWhenEmpty: Container(
         height: 60,
-        color: AppColors.surface,
         alignment: Alignment.center,
         child: Text(
           "Empty List",
           style: TextStyle(color: Colors.grey[800], fontStyle: FontStyle.italic),
         ),
       ),
+      // Use Column with stretch alignment for centering content
+      verticalAlignment: CrossAxisAlignment.stretch, 
       decoration: BoxDecoration(
         color: AppColors.surface,
         // No rounded corners
@@ -274,7 +275,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
         child: InkWell(
           onTap: () => _editTask(task),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), // Increased spacing
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant, // Matches windows
