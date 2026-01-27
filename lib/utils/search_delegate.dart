@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/data_provider.dart';
 import '../models/note.dart';
 import '../models/project.dart';
-import '../utils/constants.dart';
+import 'theme.dart';
 
 class AppSearchDelegate extends SearchDelegate {
   @override

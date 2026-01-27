@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   local_notifier
+  printing
   screen_retriever_linux
   system_tray
   url_launcher_linux

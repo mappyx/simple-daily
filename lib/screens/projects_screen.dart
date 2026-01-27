@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
 import '../models/project.dart';
-import '../utils/constants.dart';
+import '../utils/theme.dart';
 import 'kanban_board.dart';
 
 class ProjectsScreen extends StatelessWidget {

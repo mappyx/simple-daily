@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/project.dart';
 import '../providers/data_provider.dart';
-import '../utils/constants.dart';
+import '../utils/theme.dart';
 
 class KanbanBoard extends StatefulWidget {
   final Project project;

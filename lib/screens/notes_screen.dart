@@ -1,110 +1,448 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/data_provider.dart';
 import '../models/note.dart';
+import '../utils/theme.dart';
 import '../utils/constants.dart';
 
-class NotesScreen extends StatelessWidget {
+class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
+
+  @override
+  State<NotesScreen> createState() => _NotesScreenState();
+}
+
+class _NotesScreenState extends State<NotesScreen> {
+  final List<Note> _openNotes = [];
+  Note? _activeNote;
+  static const double leftPanelWidth = 360;
+
+  void _openNote(Note note) {
+    setState(() {
+      if (!_openNotes.any((n) => n.id == note.id)) {
+        _openNotes.add(note);
+      }
+      _activeNote = note;
+    });
+  }
+
+  void _closeNote(Note note) {
+    setState(() {
+      final index = _openNotes.indexWhere((n) => n.id == note.id);
+      if (index != -1) {
+        _openNotes.removeAt(index);
+        if (_activeNote?.id == note.id) {
+          _activeNote = _openNotes.isNotEmpty ? _openNotes.last : null;
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showNoteDialog(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: AppColors.background),
-      ),
       body: Consumer<DataProvider>(
         builder: (context, data, child) {
           if (data.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (data.notes.isEmpty) {
-            return Center(
-              child: Text(
-                "No notes yet. Create one!",
-                style: TextStyle(color: AppColors.textSecondary),
-              ).animate().fadeIn(duration: 500.ms),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.2,
+          
+          return Column(
+            children: [
+              // HEADER BAR WITH TABS
+              Container(
+                height: 64,
+                color: AppColors.surface,
+                child: Row(
+                  children: [
+                    // Left side - Notes title
+                    SizedBox(
+                      width: leftPanelWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Notes',
+                              style: GoogleFonts.inter(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.add, size: 18),
+                                padding: EdgeInsets.zero,
+                                onPressed: () => _showNoteDialog(context),
+                                tooltip: 'New note',
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Vertical divider
+                    Container(
+                      width: 1,
+                      color: AppColors.divider,
+                    ),
+                    // Right side - Tabs
+                    Expanded(
+                      child: _openNotes.isEmpty
+                          ? const SizedBox.shrink()
+                          : SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: _openNotes.map((note) {
+                                  final isActive = _activeNote?.id == note.id;
+                                  return _buildTab(note, isActive);
+                                }).toList(),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
               ),
-              itemCount: data.notes.length,
-              itemBuilder: (context, index) {
-                final note = data.notes[index];
-                return _buildNoteCard(context, note)
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: (50 * index).ms)
-                    .slideY(begin: 0.1, end: 0);
-              },
-            ),
+              
+              // Horizontal divider below header
+              Container(
+                height: 1,
+                color: AppColors.divider,
+              ),
+              
+              // CONTENT AREA
+              Expanded(
+                child: Row(
+                  children: [
+                    // Left Panel - Notes List
+                    Container(
+                      width: leftPanelWidth,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        border: Border(right: BorderSide(color: AppColors.divider, width: 1)),
+                      ),
+                      child: data.notes.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.note_add_outlined,
+                                    size: 48,
+                                    color: AppColors.textSecondary.withOpacity(0.5),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    "No notes yet",
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ).animate().fadeIn(duration: 500.ms),
+                            )
+                          : ListView.builder(
+                              itemCount: data.notes.length,
+                              itemBuilder: (context, index) {
+                                final note = data.notes[index];
+                                final isSelected = _activeNote?.id == note.id;
+                                
+                                return _buildNoteListItem(note, isSelected)
+                                    .animate()
+                                    .fadeIn(duration: 300.ms, delay: (30 * index).ms);
+                              },
+                            ),
+                    ),
+                    
+                    // Right Panel - Note Content
+                    Expanded(
+                      child: _activeNote == null
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.note_outlined,
+                                    size: 64,
+                                    color: AppColors.textSecondary.withOpacity(0.3),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    "Select a note to view",
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ).animate().fadeIn(duration: 500.ms),
+                            )
+                          : _buildNoteContent(_activeNote!),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildNoteCard(BuildContext context, Note note) {
-    return GestureDetector(
-      onTap: () => _showNoteDialog(context, note: note),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
+  Widget _buildTab(Note note, bool isActive) {
+    return Container(
+      height: 64,
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.background : Colors.transparent,
+        border: Border(
+          bottom: BorderSide(
+            color: isActive ? AppColors.primary : Colors.transparent,
+            width: 2,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              note.title,
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: MarkdownBody(
-                data: note.content,
-                styleSheet: MarkdownStyleSheet(
-                  p: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                  strong: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _activeNote = note;
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
+                  child: Text(
+                    note.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive ? AppColors.textPrimary : AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                fitContent: false,
-              ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _closeNote(note),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: isActive ? AppColors.textPrimary : AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              DateFormat('MMM d').format(note.lastModified),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildNoteListItem(Note note, bool isSelected) {
+    return Material(
+      color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+      child: InkWell(
+        onTap: () => _openNote(note),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: isSelected
+                ? Border(left: BorderSide(color: AppColors.primary, width: 3))
+                : null,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      note.title,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      note.content.isEmpty ? 'No content' : note.content,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(note.lastModified),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Action Buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    color: AppColors.textSecondary,
+                    onPressed: () => _showNoteDialog(context, note: note),
+                    tooltip: 'Edit',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 16),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    color: AppColors.error,
+                    onPressed: () => _deleteNote(context, note),
+                    tooltip: 'Delete',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteContent(Note note) {
+    return Container(
+      color: AppColors.background,
+      alignment: Alignment.topLeft,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: note.content.isEmpty
+            ? Text(
+                'No content',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+              )
+            : MarkdownBody(
+                data: note.content,
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    height: 1.7,
+                  ),
+                  textAlign: WrapAlignment.spaceBetween,
+                  h1: GoogleFonts.inter(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    height: 1.3,
+                  ),
+                  h2: GoogleFonts.inter(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    height: 1.3,
+                  ),
+                  h3: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    height: 1.3,
+                  ),
+                  strong: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                  em: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                  code: TextStyle(
+                    backgroundColor: AppColors.surfaceVariant,
+                    color: AppColors.primary,
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  codeblockPadding: const EdgeInsets.all(12),
+                  listBullet: TextStyle(color: AppColors.primary),
+                  blockSpacing: 16,
+                ),
+              ),
+      ).animate().fadeIn(duration: 300.ms),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inDays == 0) {
+      if (diff.inHours == 0) {
+        return '${diff.inMinutes}m ago';
+      }
+      return '${diff.inHours}h ago';
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays}d ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  void _deleteNote(BuildContext context, Note note) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(), // No rounded corners
+        title: const Text("Delete note?"),
+        content: Text("Are you sure you want to delete \"${note.title}\"?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Provider.of<DataProvider>(context, listen: false).deleteNote(note.id);
+              Navigator.pop(ctx);
+              _closeNote(note);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showNoteDialog(BuildContext context, {Note? note}) {
-    // We'll use a StatefulWidget here for toggle preview mode in future if needed
-    // For now, simple text fields, but we should hint it supports Markdown
     final titleController = TextEditingController(text: note?.title ?? '');
     final contentController = TextEditingController(text: note?.content ?? '');
 
@@ -112,6 +450,7 @@ class NotesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(), // No rounded corners
         title: Text(note == null ? 'New Note' : 'Edit Note'),
         content: SizedBox(
           width: 600,
@@ -124,7 +463,7 @@ class NotesScreen extends StatelessWidget {
                   hintText: 'Title',
                   border: InputBorder.none,
                 ),
-                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const Divider(color: Colors.white24),
               Expanded(
@@ -168,14 +507,6 @@ class NotesScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          if (note != null)
-             TextButton(
-              onPressed: () {
-                Provider.of<DataProvider>(context, listen: false).deleteNote(note.id);
-                Navigator.pop(ctx);
-              },
-              child: const Text('Delete', style: TextStyle(color: AppColors.error)),
-            ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
@@ -189,11 +520,13 @@ class NotesScreen extends StatelessWidget {
                     content: contentController.text,
                   );
                   Provider.of<DataProvider>(context, listen: false).addNote(newNote);
+                  _openNote(newNote);
                 } else {
                   note.title = titleController.text;
                   note.content = contentController.text;
                   note.lastModified = DateTime.now();
                   Provider.of<DataProvider>(context, listen: false).updateNote(note);
+                  setState(() {}); // Refresh to show updated title in tab
                 }
                 Navigator.pop(ctx);
               }
