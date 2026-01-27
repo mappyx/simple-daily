@@ -7,11 +7,29 @@ import '../models/project.dart';
 import '../utils/theme.dart';
 import 'kanban_board.dart';
 
-class ProjectsScreen extends StatelessWidget {
+class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
 
   @override
+  State<ProjectsScreen> createState() => _ProjectsScreenState();
+}
+
+class _ProjectsScreenState extends State<ProjectsScreen> {
+  Project? _selectedProject;
+
+  @override
   Widget build(BuildContext context) {
+    if (_selectedProject != null) {
+      return KanbanBoard(
+        project: _selectedProject!,
+        onBack: () {
+          setState(() {
+            _selectedProject = null;
+          });
+        },
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
@@ -71,10 +89,9 @@ class ProjectsScreen extends StatelessWidget {
       elevation: 0, // Flat look
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => KanbanBoard(project: project)),
-          );
+          setState(() {
+            _selectedProject = project;
+          });
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),

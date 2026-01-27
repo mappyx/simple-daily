@@ -10,12 +10,16 @@ import '../utils/theme.dart';
 
 class KanbanBoard extends StatefulWidget {
   final Project project;
+  final VoidCallback? onBack;
 
-  const KanbanBoard({super.key, required this.project});
+  const KanbanBoard({super.key, required this.project, this.onBack});
 
   @override
   State<KanbanBoard> createState() => _KanbanBoardState();
 }
+
+
+
 
 class _KanbanBoardState extends State<KanbanBoard> {
   late Project _project;
@@ -148,7 +152,15 @@ class _KanbanBoardState extends State<KanbanBoard> {
       appBar: AppBar(
         title: Text(_project.title),
         backgroundColor: AppColors.surface,
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: BackButton(
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
       ),
       body: DragAndDropLists(
         children: List.generate(_project.columns.length, (index) {
