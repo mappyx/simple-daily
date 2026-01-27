@@ -51,10 +51,14 @@ class _KanbanBoardState extends State<KanbanBoard> {
     Provider.of<DataProvider>(context, listen: false).updateProject(_project);
   }
 
-  void _addNewTask(KanbanColumn column) {
+  void _addNewTask() {
+    // Default to first column (usually TODO)
+    if (_project.columns.isEmpty) return;
+    final column = _project.columns.first;
+    
     TaskPriority selectedPriority = TaskPriority.medium;
     final titleController = TextEditingController();
-    final tagsController = TextEditingController(); // CSV for tags simple impl
+    final tagsController = TextEditingController(); 
 
     showDialog(
       context: context,
@@ -62,14 +66,22 @@ class _KanbanBoardState extends State<KanbanBoard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: AppColors.surface,
+              shape: const RoundedRectangleBorder(), // Rectangular Dialog
               title: const Text("New Task"),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(hintText: "Task Title"),
+                    decoration: const InputDecoration(
+                      hintText: "Task Title",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                    ),
                     autofocus: true,
+                    style: const TextStyle(color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 12),
                   DropdownButton<TaskPriority>(
@@ -98,7 +110,9 @@ class _KanbanBoardState extends State<KanbanBoard> {
                     decoration: const InputDecoration(
                       hintText: "Tags (comma separated)",
                       prefixIcon: Icon(Icons.tag, size: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                     ),
+                    style: const TextStyle(color: AppColors.textPrimary),
                   ),
                 ],
               ),
@@ -149,6 +163,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: _project.columns.isNotEmpty ? FloatingActionButton(
+        onPressed: _addNewTask,
+        backgroundColor: AppColors.primary,
+        shape: const RoundedRectangleBorder(), // Rectangular FAB
+        child: const Icon(Icons.add, color: Colors.black),
+      ) : null,
       appBar: AppBar(
         title: Text(_project.title),
         backgroundColor: AppColors.surface,
@@ -183,7 +203,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+          // No rounded corners
           border: Border(bottom: BorderSide(color: Colors.grey[800]!)),
         ),
         child: Row(
@@ -212,24 +232,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
           ],
         ),
       ),
-      footer: GestureDetector(
-         onTap: () => _addNewTask(column),
-         child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-             color: AppColors.surface,
-             borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.add, size: 16, color: AppColors.textSecondary),
-              SizedBox(width: 4),
-              Text("Add Task", style: TextStyle(color: AppColors.textSecondary)),
-            ],
-          ),
-         ),
-      ),
+
       leftSide: const VerticalDivider(color: Colors.transparent, width: 12, thickness: 0),
       rightSide: const VerticalDivider(color: Colors.transparent, width: 0, thickness: 0),
       children: List.generate(column.tasks.length, (i) {
@@ -246,7 +249,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
       ),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
+        // No rounded corners
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.3),
@@ -262,29 +265,27 @@ class _KanbanBoardState extends State<KanbanBoard> {
     return DragAndDropItem(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C2C2C),
-          borderRadius: BorderRadius.circular(8),
-          border: Border(
-            left: BorderSide(
-              color: _getPriorityColor(task.priority),
-              width: 4,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppColors.surfaceVariant, // Matches windows
+          border: Border.all(color: Colors.white10),
+          // No rounded corners
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                // Minimal priority indicator dot instead of border
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(task.priority),
+                    shape: BoxShape.rectangle, // Square dot
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     task.title,
@@ -298,29 +299,35 @@ class _KanbanBoardState extends State<KanbanBoard> {
               ],
             ),
             if (task.tags.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Wrap(
-                spacing: 4,
+                spacing: 8,
                 runSpacing: 4,
                 children: task.tags.map((tag) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
+                    color: AppColors.primary.withOpacity(0.1),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    // Rectangular chips
                   ),
                   child: Text(
-                    tag,
-                    style: const TextStyle(color: AppColors.primary, fontSize: 10),
+                    tag.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      color: AppColors.primary, 
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5
+                    ),
                   ),
                 )).toList(),
               )
             ],
             if (task.dueDate != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   const Icon(Icons.calendar_today, size: 12, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 8),
                   Text(
                     DateFormat('MMM d').format(task.dueDate!),
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
