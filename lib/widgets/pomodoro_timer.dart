@@ -102,7 +102,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
           const SizedBox(width: 8),
           Text(
             _timerString,
-            style: GoogleFonts.jetbrainsMono(
+            style: GoogleFonts.robotoMono(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
