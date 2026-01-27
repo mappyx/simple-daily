@@ -30,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
   void initState() {
     super.initState();
     windowManager.addListener(this);
+    windowManager.setPreventClose(true); // Enable interception
     _checkForUpdates();
   }
 
@@ -58,6 +59,47 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
             ),
           ],
         ),
+      );
+    }
+  }
+
+  @override
+  void onWindowClose() async {
+    bool _isPreventClose = await windowManager.isPreventClose();
+    if (_isPreventClose) {
+      showDialog(
+        context: context,
+        builder: (_) {
+          return AlertDialog(
+             backgroundColor: AppColors.surface,
+             shape: const RoundedRectangleBorder(),
+             title: const Text('Close SimpleDaily'),
+             content: const Text('Do you want to minimize to tray or exit?'),
+             actions: [
+               TextButton(
+                 child: const Text('Cancel'),
+                 onPressed: () {
+                   Navigator.of(context).pop();
+                 },
+               ),
+               TextButton(
+                 child: const Text('Minimize to Tray'),
+                 onPressed: () async {
+                   Navigator.of(context).pop();
+                   await windowManager.hide();
+                 },
+               ),
+               ElevatedButton(
+                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                 child: const Text('Exit', style: TextStyle(color: Colors.white)),
+                 onPressed: () async {
+                   Navigator.of(context).pop();
+                   await windowManager.destroy();
+                 },
+               ),
+             ],
+          );
+        },
       );
     }
   }
@@ -207,6 +249,19 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                   ),
                                 ),
                                 const PopupMenuDivider(),
+                                PopupMenuItem(
+                                  value: 'minimize',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.minimize, size: 16, color: AppColors.textSecondary),
+                                      const SizedBox(width: 12),
+                                      const Text('Minimize to Tray'),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                     windowManager.hide();
+                                  },
+                                ),
                                 PopupMenuItem(
                                   value: 'exit',
                                   child: Row(
