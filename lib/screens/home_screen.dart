@@ -135,14 +135,11 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                       color: AppColors.primary,
                       // No rounded corners
                     ),
-                    child: Center(
-                      child: Text(
-                        'SD',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.edit_note_rounded,
+                        color: Colors.black,
+                        size: 32,
                       ),
                     ),
                   ),
