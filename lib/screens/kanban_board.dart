@@ -192,6 +192,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
         listWidth: 320,
         listDraggingWidth: 320,
         listPadding: const EdgeInsets.all(12.0),
+        // itemDragOnLongPress defaults to true, enabling hold-to-drag
+        itemDivider: const SizedBox(height: 8), // Gap between items during drag
+        listInnerDecoration: BoxDecoration(
+          color: Colors.transparent, // Background of the list content
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
@@ -263,81 +269,195 @@ class _KanbanBoardState extends State<KanbanBoard> {
 
   DragAndDropItem _buildItem(Task task) {
     return DragAndDropItem(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant, // Matches windows
-          border: Border.all(color: Colors.white10),
-          // No rounded corners
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _editTask(task),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant, // Matches windows
+              border: Border.all(color: Colors.white10),
+              // No rounded corners
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Minimal priority indicator dot instead of border
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(task.priority),
-                    shape: BoxShape.rectangle, // Square dot
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    task.title,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary, 
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500
+                Row(
+                  children: [
+                    // Minimal priority indicator dot instead of border
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _getPriorityColor(task.priority),
+                        shape: BoxShape.rectangle, // Square dot
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        task.title,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary, 
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (task.tags.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: task.tags.map((tag) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        // Rectangular chips
+                      ),
+                      child: Text(
+                        tag.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          color: AppColors.primary, 
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5
+                        ),
+                      ),
+                    )).toList(),
+                  )
+                ],
+                if (task.dueDate != null) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 12, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('MMM d').format(task.dueDate!),
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ]
               ],
             ),
-            if (task.tags.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: task.tags.map((tag) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                    // Rectangular chips
-                  ),
-                  child: Text(
-                    tag.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      color: AppColors.primary, 
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5
-                    ),
-                  ),
-                )).toList(),
-              )
-            ],
-            if (task.dueDate != null) ...[
-              const SizedBox(height: 12),
-              Row(
+          ),
+        ),
+      ).animate().fadeIn(duration: 300.ms),
+    );
+  }
+
+  void _editTask(Task task) {
+    final titleController = TextEditingController(text: task.title);
+    final tagsController = TextEditingController(text: task.tags.join(', '));
+    TaskPriority selectedPriority = task.priority;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              shape: const RoundedRectangleBorder(),
+              title: const Text("Edit Task"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.calendar_today, size: 12, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    DateFormat('MMM d').format(task.dueDate!),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      hintText: "Task Title",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                    ),
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButton<TaskPriority>(
+                    value: selectedPriority,
+                    isExpanded: true,
+                    dropdownColor: AppColors.surface,
+                    items: TaskPriority.values.map((p) {
+                      return DropdownMenuItem(
+                        value: p,
+                        child: Text(
+                          p.toString().split('.').last.toUpperCase(),
+                          style: TextStyle(
+                            color: _getPriorityColor(p),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selectedPriority = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: tagsController,
+                    decoration: const InputDecoration(
+                      hintText: "Tags (comma separated)",
+                      prefixIcon: Icon(Icons.tag, size: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                    ),
+                    style: const TextStyle(color: AppColors.textPrimary),
                   ),
                 ],
               ),
-            ]
-          ],
-        ),
-      ).animate().fadeIn(duration: 300.ms),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                     // Delete task option
+                     setState(() {
+                       for(var col in _project.columns) {
+                         col.tasks.remove(task);
+                       }
+                     });
+                     _saveProject();
+                     Navigator.pop(context);
+                  },
+                  child: const Text("Delete", style: TextStyle(color: AppColors.error)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (titleController.text.isNotEmpty) {
+                      List<String> tags = tagsController.text
+                          .split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList();
+                      
+                      setState(() {
+                         task.title = titleController.text;
+                         task.priority = selectedPriority;
+                         task.tags = tags;
+                      });
+                      _saveProject();
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
