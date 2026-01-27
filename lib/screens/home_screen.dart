@@ -136,8 +136,8 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                             // Archive dropdown menu
                             PopupMenuButton<String>(
                               offset: const Offset(0, 40),
-                              shape: const RoundedRectangleBorder(), // No rounded corners
-                              color: const Color(0xFF1A1A1A), // Darker background for contrast
+                              shape: const RoundedRectangleBorder(),
+                              color: const Color(0xFF1A1A1A),
                               onSelected: (value) async {
                                 if (value == 'export_all') {
                                   try {
@@ -157,11 +157,32 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     }
                                   }
                                 } else if (value == 'export_current') {
-                                  // Get current note from NotesScreen
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Please select a note first')),
-                                  );
-                                  // TODO: Need to pass current note from NotesScreen
+                                  final dataProvider = Provider.of<DataProvider>(context, listen: false);
+                                  final currentNoteId = dataProvider.currentNoteId;
+                                  
+                                  if (currentNoteId != null) {
+                                    try {
+                                      final note = dataProvider.notes.firstWhere((n) => n.id == currentNoteId);
+                                      final pdfService = PdfExportService();
+                                      await pdfService.exportNoteToPdf(note);
+                                      
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Note "${note.title}" exported to Downloads!')),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error exporting note: $e')),
+                                        );
+                                      }
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Please select a note to export')),
+                                    );
+                                  }
                                 }
                               },
                               itemBuilder: (context) => [

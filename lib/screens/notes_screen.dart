@@ -27,6 +27,8 @@ class _NotesScreenState extends State<NotesScreen> {
       }
       _activeNote = note;
     });
+    // Sync with global provider
+    Provider.of<DataProvider>(context, listen: false).setCurrentNote(note.id);
   }
 
   void _closeNote(Note note) {
@@ -39,6 +41,8 @@ class _NotesScreenState extends State<NotesScreen> {
         }
       }
     });
+    // Sync with global provider
+    Provider.of<DataProvider>(context, listen: false).setCurrentNote(_activeNote?.id);
   }
 
   @override
@@ -51,6 +55,14 @@ class _NotesScreenState extends State<NotesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           
+          // Ensure provider is in sync with local state
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final provider = Provider.of<DataProvider>(context, listen: false);
+            if (provider.currentNoteId != _activeNote?.id) {
+              provider.setCurrentNote(_activeNote?.id);
+            }
+          });
+
           return Column(
             children: [
               // HEADER BAR WITH TABS
@@ -221,6 +233,7 @@ class _NotesScreenState extends State<NotesScreen> {
             setState(() {
               _activeNote = note;
             });
+            Provider.of<DataProvider>(context, listen: false).setCurrentNote(note.id);
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

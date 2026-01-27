@@ -12,6 +12,14 @@ class DataProvider extends ChangeNotifier {
   List<Note> get notes => _notes;
   List<Project> get projects => _projects;
 
+  String? _currentNoteId;
+  String? get currentNoteId => _currentNoteId;
+
+  void setCurrentNote(String? id) {
+    _currentNoteId = id;
+    notifyListeners();
+  }
+
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
