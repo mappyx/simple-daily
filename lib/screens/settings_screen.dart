@@ -94,24 +94,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Column(
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.notifications_active_outlined, color: AppColors.primary),
-                    title: const Text("Daily Reminder"),
-                    subtitle: Text("Notify me at ${_reminderTime.format(context)}"),
-                    trailing: TextButton(
-                      onPressed: () => _selectTime(context),
-                      child: const Text("Change"),
+                  Tooltip(
+                    message: "Recibe un resumen diario de tus tareas pendientes a la hora que prefieras para organizar mejor tu día.",
+                    child: ListTile(
+                      leading: const Icon(Icons.notifications_active_outlined, color: AppColors.primary),
+                      title: const Text("Daily Reminder"),
+                      subtitle: Text("Notify me at ${_reminderTime.format(context)}"),
+                      trailing: TextButton(
+                        onPressed: () => _selectTime(context),
+                        child: const Text("Change"),
+                      ),
                     ),
                   ),
                   const Divider(height: 1, color: Colors.white10),
-                  ListTile(
-                    leading: const Icon(Icons.rocket_launch_outlined, color: AppColors.secondary),
-                    title: const Text("Launch at Startup"),
-                    subtitle: const Text("Start SimpleDaily when you log in"),
-                    trailing: Switch(
-                      value: _launchAtStartup,
-                      activeColor: AppColors.secondary,
-                      onChanged: _toggleStartup,
+                  Tooltip(
+                    message: "Permite que SimpleDaily se inicie automáticamente al encender tu computadora para que no olvides tus tareas.",
+                    child: ListTile(
+                      leading: const Icon(Icons.rocket_launch_outlined, color: AppColors.secondary),
+                      title: const Text("Launch at Startup"),
+                      subtitle: const Text("Start SimpleDaily when you log in"),
+                      trailing: Switch(
+                        value: _launchAtStartup,
+                        activeColor: AppColors.secondary,
+                        onChanged: _toggleStartup,
+                      ),
                     ),
                   ),
                 ],

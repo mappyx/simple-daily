@@ -1,13 +1,20 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import '../models/project.dart';
 import '../providers/data_provider.dart';
+import 'preferences_service.dart';
+import 'notification_service.dart';
 
 class TaskAutomationService {
   final DataProvider _dataProvider;
+  final PreferencesService _prefs = PreferencesService();
   Timer? _timer;
   
+  // Track last notified date to prevent multiple notifications per day
+  String? _lastNotifiedDate;
+
   // Index of upcoming events sorted by time
   List<_TaskEvent> _eventIndex = [];
 
@@ -19,11 +26,37 @@ class TaskAutomationService {
   }
 
   void _startService() {
-    // Still using a 1-minute timer but now it only checks the sorted index
-    // which is O(1) for the check instead of O(N^2)
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _processEvents();
+      _checkDailyReminder();
     });
+  }
+
+  Future<void> _checkDailyReminder() async {
+    final now = DateTime.now();
+    final todayStr = "${now.year}-${now.month}-${now.day}";
+    
+    // Only notify once per day
+    if (_lastNotifiedDate == todayStr) return;
+
+    final reminderTime = await _prefs.getReminderTime();
+    if (reminderTime == null) return;
+
+    if (now.hour == reminderTime.hour && now.minute == reminderTime.minute) {
+      // Count active tasks (not in DONE)
+      int activeTaskCount = 0;
+      for (var project in _dataProvider.projects) {
+        if (project.columns.isNotEmpty) {
+           // Assume index 0 and 1 are TO DO and IN PROGRESS
+           for (int i = 0; i < project.columns.length - 1; i++) {
+             activeTaskCount += project.columns[i].tasks.length;
+           }
+        }
+      }
+
+      await NotificationService().showDailyReminder(activeTaskCount);
+      _lastNotifiedDate = todayStr;
+    }
   }
 
   /// Option B: Build a flat, sorted index of all time-relevant tasks
