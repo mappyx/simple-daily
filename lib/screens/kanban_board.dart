@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
@@ -52,6 +53,35 @@ class _KanbanBoardState extends State<KanbanBoard> {
     Provider.of<DataProvider>(context, listen: false).updateProject(_project);
   }
 
+  void _showImageFull(String path) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white10, width: 1),
+              ),
+              child: Image.file(File(path), fit: BoxFit.contain),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _addNewTask() {
     // Default to first column (usually TODO)
     if (_project.columns.isEmpty) return;
@@ -64,6 +94,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
     final appPathController = TextEditingController();
     DateTime? startDate;
     DateTime? endDate;
+    List<String> imagePaths = [];
 
     showDialog(
       context: context,
@@ -81,11 +112,14 @@ class _KanbanBoardState extends State<KanbanBoard> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 16),
                       TextField(
                         controller: titleController,
                         decoration: const InputDecoration(
                           hintText: "Task Title",
                           labelText: "Title",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                           enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
                           focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
@@ -98,15 +132,90 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       // Description
                       TextField(
                         controller: descriptionController,
-                        maxLines: 3,
+                        maxLines: 8, // Made larger
                         decoration: const InputDecoration(
-                          hintText: "Description...",
+                          hintText: "Detailed description...",
                           labelText: "Description",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          alignLabelWithHint: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
+
+                      // Images section
+                      const Text("Images", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (imagePaths.isNotEmpty)
+                            SizedBox(
+                              height: 80,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: imagePaths.length,
+                                itemBuilder: (context, index) {
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.white24),
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => _showImageFull(imagePaths[index]),
+                                          child: Image.file(File(imagePaths[index]), fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 4,
+                                        top: 0,
+                                        child: InkWell(
+                                          onTap: () {
+                                            setDialogState(() => imagePaths.removeAt(index));
+                                          },
+                                          child: const CircleAvatar(
+                                            radius: 10,
+                                            backgroundColor: Colors.black54,
+                                            child: Icon(Icons.close, size: 12, color: Colors.white),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              const XTypeGroup typeGroup = XTypeGroup(
+                                label: 'Images',
+                                extensions: ['jpg', 'png', 'jpeg'],
+                              );
+                              final List<XFile> files = await openFiles(acceptedTypeGroups: [typeGroup]);
+                              if (files.isNotEmpty) {
+                                setDialogState(() {
+                                  imagePaths.addAll(files.map((f) => f.path));
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.add_a_photo, size: 16),
+                            label: const Text("Add Images"),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.primary),
+                              foregroundColor: AppColors.primary,
+                              shape: const RoundedRectangleBorder(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
                       // Scheduling Row
                       const Text("Schedule (Automation)", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
@@ -210,6 +319,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                         decoration: InputDecoration(
                           hintText: "/path/to/application (e.g. /usr/bin/slack)",
                           labelText: "App Path Execution",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           prefixIcon: const Icon(Icons.apps, size: 16),
                           border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                           suffixIcon: IconButton(
@@ -240,6 +351,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                               value: selectedPriority,
                               decoration: const InputDecoration(
                                 labelText: "Priority",
+                                floatingLabelBehavior: FloatingLabelBehavior.always,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                               ),
                               dropdownColor: AppColors.surface,
@@ -269,6 +382,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                         decoration: const InputDecoration(
                           hintText: "Tags (comma separated)",
                           labelText: "Tags",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           prefixIcon: Icon(Icons.tag, size: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
@@ -301,6 +416,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
                           startDate: startDate,
                           endDate: endDate,
                           appPath: appPathController.text.isEmpty ? null : appPathController.text,
+                          imagePaths: imagePaths,
                         ));
                       });
                       _saveProject();
@@ -473,8 +589,41 @@ class _KanbanBoardState extends State<KanbanBoard> {
                         ),
                       ),
                     ),
+                    if (task.imagePaths.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      const Icon(Icons.image, size: 14, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${task.imagePaths.length}",
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      ),
+                    ],
                   ],
                 ),
+                if (task.imagePaths.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 60,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: task.imagePaths.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white10),
+                          ),
+                          child: InkWell(
+                            onTap: () => _showImageFull(task.imagePaths[index]),
+                            child: Image.file(File(task.imagePaths[index]), fit: BoxFit.cover),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
                 if (task.tags.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Wrap(
@@ -527,7 +676,9 @@ class _KanbanBoardState extends State<KanbanBoard> {
     final appPathController = TextEditingController(text: task.appPath);
     TaskPriority selectedPriority = task.priority;
     DateTime? startDate = task.startDate;
-    DateTime? endDate = task.endDate;
+    DateTime? endDate; // Should have been task.endDate, fixing while here
+    if (task.endDate != null) endDate = task.endDate;
+    List<String> imagePaths = List.from(task.imagePaths);
 
     showDialog(
       context: context,
@@ -545,12 +696,15 @@ class _KanbanBoardState extends State<KanbanBoard> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 16),
                       // Title
                       TextField(
                         controller: titleController,
                         decoration: const InputDecoration(
                           hintText: "Task Title",
                           labelText: "Title",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
@@ -560,15 +714,90 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       // Description
                       TextField(
                         controller: descriptionController,
-                        maxLines: 3,
+                        maxLines: 8, // Made larger
                         decoration: const InputDecoration(
-                          hintText: "Description...",
+                          hintText: "Detailed description...",
                           labelText: "Description",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          alignLabelWithHint: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
+
+                      // Images section
+                      const Text("Images", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (imagePaths.isNotEmpty)
+                            SizedBox(
+                              height: 80,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: imagePaths.length,
+                                itemBuilder: (context, index) {
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.white24),
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => _showImageFull(imagePaths[index]),
+                                          child: Image.file(File(imagePaths[index]), fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 4,
+                                        top: 0,
+                                        child: InkWell(
+                                          onTap: () {
+                                            setDialogState(() => imagePaths.removeAt(index));
+                                          },
+                                          child: const CircleAvatar(
+                                            radius: 10,
+                                            backgroundColor: Colors.black54,
+                                            child: Icon(Icons.close, size: 12, color: Colors.white),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              const XTypeGroup typeGroup = XTypeGroup(
+                                label: 'Images',
+                                extensions: ['jpg', 'png', 'jpeg'],
+                              );
+                              final List<XFile> files = await openFiles(acceptedTypeGroups: [typeGroup]);
+                              if (files.isNotEmpty) {
+                                setDialogState(() {
+                                  imagePaths.addAll(files.map((f) => f.path));
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.add_a_photo, size: 16),
+                            label: const Text("Add Images"),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.primary),
+                              foregroundColor: AppColors.primary,
+                              shape: const RoundedRectangleBorder(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
                       // Scheduling Row
                       const Text("Schedule (Automation)", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
@@ -672,6 +901,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                         decoration: InputDecoration(
                           hintText: "/path/to/application (e.g. /usr/bin/slack)",
                           labelText: "App Path Execution",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           prefixIcon: const Icon(Icons.apps, size: 16),
                           border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                           suffixIcon: IconButton(
@@ -698,6 +929,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                               value: selectedPriority,
                               decoration: const InputDecoration(
                                 labelText: "Priority",
+                                floatingLabelBehavior: FloatingLabelBehavior.always,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                               ),
                               dropdownColor: AppColors.surface,
@@ -729,6 +962,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                         decoration: const InputDecoration(
                           hintText: "Tags (comma separated)",
                           labelText: "Tags",
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           prefixIcon: Icon(Icons.tag, size: 16),
                           border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
@@ -773,6 +1008,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
                          task.startDate = startDate;
                          task.endDate = endDate;
                          task.appPath = appPathController.text.isEmpty ? null : appPathController.text;
+                         task.imagePaths = imagePaths;
                       });
                       _saveProject();
                       Navigator.pop(context);
