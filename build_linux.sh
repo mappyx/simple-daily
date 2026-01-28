@@ -26,12 +26,12 @@ cat > "$DEB_STRUCT/DEBIAN/control" << EOL
 Package: $APP_NAME
 Version: $VERSION
 Architecture: $ARCH
-Maintainer: Your Name <you@example.com>
+Maintainer: Rafael Paez <jugamus@gmail.com>
 Installed-Size: $(du -s "$DEB_STRUCT/usr" | cut -f1)
 Depends: libgtk-3-0, libx11-6, libblkid1, liblzma5, libnotify4, libayatana-appindicator3-1
 Section: utils
 Priority: optional
-Homepage: https://github.com/YourUser/SimpleDaily
+Homepage: https://github.com/mappyx/simple-daily
 Description: Simple notes and Kanban project manager.
  A Flutter application for productivity.
 EOL
