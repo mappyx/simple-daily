@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/note.dart';
 import '../models/project.dart';
@@ -15,9 +16,20 @@ class DataProvider extends ChangeNotifier {
   String? _currentNoteId;
   String? get currentNoteId => _currentNoteId;
 
+  Timer? _saveTimer;
+
   void setCurrentNote(String? id) {
     _currentNoteId = id;
     notifyListeners();
+  }
+
+  /// Saves data after a small delay to batch multiple rapid changes
+  void saveDataDebounced() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(seconds: 2), () async {
+      print("DataProvider: Batch-saving data to disk...");
+      await saveData();
+    });
   }
 
   bool _isLoading = true;
