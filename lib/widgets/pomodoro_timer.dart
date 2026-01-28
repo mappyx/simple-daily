@@ -84,49 +84,63 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return Tooltip(
+      message: "Temporizador Pomodoro: Enfócate 25 minutos y descansa. ¡Maximiza tu productividad!",
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _isRunning ? AppColors.secondary : Colors.transparent),
+        color: AppColors.surfaceVariant,
+        border: Border.all(color: AppColors.primary, width: 0.5),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.timer, 
-            size: 16, 
-            color: _isRunning ? AppColors.secondary : Colors.grey
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _timerString,
-            style: GoogleFonts.robotoMono(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+      textStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _isRunning ? AppColors.secondary : Colors.transparent),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.timer, 
+              size: 16, 
+              color: _isRunning ? AppColors.secondary : Colors.grey
             ),
-          ),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: _toggleTimer,
-            child: Icon(
-              _isRunning ? Icons.pause : Icons.play_arrow,
-              size: 18,
-              color: AppColors.textPrimary,
+            const SizedBox(width: 8),
+            Text(
+              _timerString,
+              style: GoogleFonts.robotoMono(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: _resetTimer,
-            child: const Icon(
-              Icons.refresh,
-              size: 18,
-              color: Colors.grey,
+            const SizedBox(width: 8),
+            Tooltip(
+              message: _isRunning ? "Pausar" : "Iniciar Sesión de Enfoque",
+              child: InkWell(
+                onTap: _toggleTimer,
+                child: Icon(
+                  _isRunning ? Icons.pause : Icons.play_arrow,
+                  size: 18,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Tooltip(
+              message: "Reiniciar Temporizador",
+              child: InkWell(
+                onTap: _resetTimer,
+                child: const Icon(
+                  Icons.refresh,
+                  size: 18,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
