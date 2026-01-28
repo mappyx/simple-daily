@@ -117,17 +117,58 @@ class TaskAutomationService {
   }
 
   Future<void> _launchApp(String path) async {
-    print("Launching app: $path");
+    print("Automation: Processing path: $path");
+    final file = File(path);
+    if (!file.existsSync()) {
+      print("Error: File not found at $path");
+      return;
+    }
+
+    bool isExecutable = false;
+
+    // Detect if executable
+    if (Platform.isWindows) {
+      final ext = path.toLowerCase();
+      if (ext.endsWith('.exe') || ext.endsWith('.bat') || ext.endsWith('.cmd') || ext.endsWith('.com')) {
+        isExecutable = true;
+      }
+    } else {
+      // Linux/MacOS: Check executable permission
+      try {
+        final result = await Process.run('test', ['-x', path]);
+        if (result.exitCode == 0) {
+          isExecutable = true;
+        }
+      } catch (e) {
+        // Fallback or ignore
+      }
+    }
+
+    if (isExecutable) {
+      print("Identified as Executable/Program. Running...");
+      try {
+        await Process.start(path, [], mode: ProcessStartMode.detached);
+      } catch (e) {
+        print("Failed to run as executable: $e. Fallback to system open.");
+        await _openSystemDefault(path);
+      }
+    } else {
+      print("Identified as Document/File. Opening...");
+      await _openSystemDefault(path);
+    }
+  }
+
+  Future<void> _openSystemDefault(String path) async {
     try {
       if (Platform.isWindows) {
-        await Process.run('start', [path], runInShell: true);
+        await Process.run('cmd', ['/c', 'start', '', path], runInShell: true);
       } else if (Platform.isLinux) {
-        // Use gtk-launch or direct execution
-        // Check if executable
-        await Process.run(path, [], runInShell: true);
+        await Process.run('xdg-open', [path], runInShell: true);
+      } else if (Platform.isMacOS) {
+        await Process.run('open', [path], runInShell: true);
       }
     } catch (e) {
-      print("Error launching app: $e");
+      print("Error opening file: $e");
     }
   }
 

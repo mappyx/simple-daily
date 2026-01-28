@@ -4,6 +4,7 @@ import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:file_selector/file_selector.dart';
 import '../models/project.dart';
 import '../providers/data_provider.dart';
 import '../utils/theme.dart';
@@ -206,11 +207,27 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: appPathController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: "/path/to/application (e.g. /usr/bin/slack)",
                           labelText: "App Path Execution",
-                          prefixIcon: Icon(Icons.apps, size: 16),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          prefixIcon: const Icon(Icons.apps, size: 16),
+                          border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.folder_open, size: 16),
+                            onPressed: () async {
+                              const XTypeGroup typeGroup = XTypeGroup(
+                                label: 'Executables',
+                              );
+                              try {
+                                 final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+                                 if (file != null) {
+                                   appPathController.text = file.path;
+                                 }
+                              } catch (e) {
+                                debugPrint('Error picking file: $e');
+                              }
+                            },
+                          ),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
@@ -652,11 +669,23 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: appPathController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: "/path/to/application (e.g. /usr/bin/slack)",
                           labelText: "App Path Execution",
-                          prefixIcon: Icon(Icons.apps, size: 16),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          prefixIcon: const Icon(Icons.apps, size: 16),
+                          border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.folder_open, size: 16),
+                            onPressed: () async {
+                              const XTypeGroup typeGroup = XTypeGroup(
+                                label: 'Executables',
+                              );
+                              final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+                              if (file != null) {
+                                appPathController.text = file.path;
+                              }
+                            },
+                          ),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
