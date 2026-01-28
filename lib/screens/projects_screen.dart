@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/project.dart';
 import '../utils/theme.dart';
 import 'kanban_board.dart';
@@ -23,13 +24,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       return KanbanBoard(
         project: _selectedProject!,
         onBack: () {
-          setState(() {
-            _selectedProject = null;
-          });
+          if (mounted) {
+            setState(() {
+              _selectedProject = null;
+            });
+          }
         },
       );
     }
 
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
@@ -46,8 +50,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           if (data.projects.isEmpty) {
             return Center(
               child: Text(
-                "No projects. Start one!",
-                style: TextStyle(color: AppColors.textSecondary),
+                lang.translate('no_projects'),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
             );
           }
@@ -62,7 +66,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             itemCount: data.projects.length,
             itemBuilder: (context, index) {
               final project = data.projects[index];
-              return _buildProjectTile(context, project);
+              return _buildProjectTile(context, project, lang);
             },
           );
         },
@@ -70,7 +74,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  Widget _buildProjectTile(BuildContext context, Project project) {
+  Widget _buildProjectTile(BuildContext context, Project project, LanguageProvider lang) {
     // Calculate progress
     int totalTasks = 0;
     int doneTasks = 0;
@@ -89,9 +93,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       elevation: 0, // Flat look
       child: InkWell(
         onTap: () {
-          setState(() {
-            _selectedProject = project;
-          });
+          if (mounted) {
+            setState(() {
+              _selectedProject = project;
+            });
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -126,14 +132,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Created ${DateFormat.yMMMd().format(project.createdAt)}",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                "${lang.translate('created')} ${DateFormat.yMMMd().format(project.createdAt)}",
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
               const Spacer(),
               Row(
                 children: [
                   Text(
-                    "${(progress * 100).toInt()}% Done",
+                    "${(progress * 100).toInt()}% ${lang.translate('done')}",
                      style: GoogleFonts.inter(
                        fontSize: 12, 
                        fontWeight: FontWeight.w600,
@@ -142,8 +148,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    "$doneTasks/$totalTasks Tasks",
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                    "$doneTasks/$totalTasks ${lang.translate('tasks')}",
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                   ),
                 ],
               ),
@@ -163,17 +169,18 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _deleteProject(BuildContext context, Project project) {
+      final lang = context.read<LanguageProvider>();
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: const RoundedRectangleBorder(), // Rectangular Dialog
-          title: const Text("Delete Project?"),
-          content: const Text("This cannot be undone."),
+          title: Text(lang.translate('delete_project')),
+          content: Text(lang.translate('undone_msg')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel"),
+              child: Text(lang.translate('cancel')),
             ),
             TextButton(
               onPressed: () {
@@ -181,7 +188,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     .deleteProject(project.id);
                 Navigator.pop(ctx);
               },
-              child: const Text("Delete", style: TextStyle(color: AppColors.error)),
+              child: Text(lang.translate('delete'), style: const TextStyle(color: AppColors.error)),
             ),
           ],
         ),
@@ -189,23 +196,24 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   void _showAddProjectDialog(BuildContext context) {
+    final lang = context.read<LanguageProvider>();
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: const RoundedRectangleBorder(), // Rectangular Dialog
-        title: const Text("New Project"),
+        title: Text(lang.translate('new_project')),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            hintText: "Project Name",
-            border: OutlineInputBorder(borderRadius: BorderRadius.zero), // Rectangular input
-            enabledBorder: OutlineInputBorder(
+          decoration: InputDecoration(
+            hintText: lang.translate('project_name'),
+            border: const OutlineInputBorder(borderRadius: BorderRadius.zero), // Rectangular input
+            enabledBorder: const OutlineInputBorder(
               borderSide: BorderSide(color: Colors.white24),
               borderRadius: BorderRadius.zero,
             ),
-            focusedBorder: OutlineInputBorder(
+            focusedBorder: const OutlineInputBorder(
               borderSide: BorderSide(color: AppColors.primary),
               borderRadius: BorderRadius.zero,
             ),
@@ -216,7 +224,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(lang.translate('cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -227,7 +235,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text("Create"),
+            child: Text(lang.translate('create')),
           ),
         ],
       ),

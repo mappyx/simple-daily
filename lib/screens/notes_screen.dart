@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/data_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/note.dart';
 import '../utils/theme.dart';
 import '../utils/constants.dart';
@@ -21,32 +22,37 @@ class _NotesScreenState extends State<NotesScreen> {
   static const double leftPanelWidth = 360;
 
   void _openNote(Note note) {
-    setState(() {
-      if (!_openNotes.any((n) => n.id == note.id)) {
-        _openNotes.add(note);
-      }
-      _activeNote = note;
-    });
+    if (mounted) {
+      setState(() {
+        if (!_openNotes.any((n) => n.id == note.id)) {
+          _openNotes.add(note);
+        }
+        _activeNote = note;
+      });
+    }
     // Sync with global provider
     Provider.of<DataProvider>(context, listen: false).setCurrentNote(note.id);
   }
 
   void _closeNote(Note note) {
-    setState(() {
-      final index = _openNotes.indexWhere((n) => n.id == note.id);
-      if (index != -1) {
-        _openNotes.removeAt(index);
-        if (_activeNote?.id == note.id) {
-          _activeNote = _openNotes.isNotEmpty ? _openNotes.last : null;
+    if (mounted) {
+      setState(() {
+        final index = _openNotes.indexWhere((n) => n.id == note.id);
+        if (index != -1) {
+          _openNotes.removeAt(index);
+          if (_activeNote?.id == note.id) {
+            _activeNote = _openNotes.isNotEmpty ? _openNotes.last : null;
+          }
         }
-      }
-    });
+      });
+    }
     // Sync with global provider
     Provider.of<DataProvider>(context, listen: false).setCurrentNote(_activeNote?.id);
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Consumer<DataProvider>(
@@ -79,7 +85,7 @@ class _NotesScreenState extends State<NotesScreen> {
                         child: Row(
                           children: [
                             Text(
-                              'Notes',
+                              lang.translate('notes'),
                               style: GoogleFonts.inter(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w600,
@@ -97,7 +103,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                 icon: const Icon(Icons.add, size: 18),
                                 padding: EdgeInsets.zero,
                                 onPressed: () => _showNoteDialog(context),
-                                tooltip: 'New note',
+                                tooltip: lang.translate('new_note'),
                                 color: Colors.black,
                               ),
                             ),
@@ -157,8 +163,8 @@ class _NotesScreenState extends State<NotesScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    "No notes yet",
-                                    style: TextStyle(
+                                    lang.translate('no_tasks'),
+                                    style: const TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 14,
                                     ),
@@ -193,8 +199,8 @@ class _NotesScreenState extends State<NotesScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    "Select a note to view",
-                                    style: TextStyle(
+                                    lang.translate('select_note_view'),
+                                    style: const TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 16,
                                     ),
@@ -202,7 +208,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                 ],
                               ).animate().fadeIn(duration: 500.ms),
                             )
-                          : _buildNoteContent(_activeNote!),
+                          : _buildNoteContent(_activeNote!, lang),
                     ),
                   ],
                 ),
@@ -230,9 +236,11 @@ class _NotesScreenState extends State<NotesScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            setState(() {
-              _activeNote = note;
-            });
+            if (mounted) {
+              setState(() {
+                _activeNote = note;
+              });
+            }
             Provider.of<DataProvider>(context, listen: false).setCurrentNote(note.id);
           },
           child: Padding(
@@ -270,6 +278,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNoteListItem(Note note, bool isSelected) {
+    final lang = context.watch<LanguageProvider>();
     return Material(
       color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
       child: InkWell(
@@ -278,7 +287,7 @@ class _NotesScreenState extends State<NotesScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             border: isSelected
-                ? Border(left: BorderSide(color: AppColors.primary, width: 3))
+                ? const Border(left: BorderSide(color: AppColors.primary, width: 3))
                 : null,
           ),
           child: Row(
@@ -299,8 +308,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      note.content.isEmpty ? 'No content' : note.content,
-                      style: TextStyle(
+                      note.content.isEmpty ? lang.translate('no_content') : note.content,
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
@@ -309,7 +318,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _formatDate(note.lastModified),
+                      _formatDate(note.lastModified, lang),
                       style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary.withOpacity(0.7),
@@ -329,7 +338,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     constraints: const BoxConstraints(),
                     color: AppColors.textSecondary,
                     onPressed: () => _showNoteDialog(context, note: note),
-                    tooltip: 'Edit',
+                    tooltip: lang.translate('change'),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 16),
@@ -337,7 +346,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     constraints: const BoxConstraints(),
                     color: AppColors.error,
                     onPressed: () => _deleteNote(context, note),
-                    tooltip: 'Delete',
+                    tooltip: lang.translate('delete'),
                   ),
                 ],
               ),
@@ -348,7 +357,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildNoteContent(Note note) {
+  Widget _buildNoteContent(Note note, LanguageProvider lang) {
     return Container(
       color: AppColors.background,
       alignment: Alignment.topLeft,
@@ -356,8 +365,8 @@ class _NotesScreenState extends State<NotesScreen> {
         padding: const EdgeInsets.all(32),
         child: note.content.isEmpty
             ? Text(
-                'No content',
-                style: TextStyle(
+                lang.translate('no_content'),
+                style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontStyle: FontStyle.italic,
                 ),
@@ -365,7 +374,7 @@ class _NotesScreenState extends State<NotesScreen> {
             : MarkdownBody(
                 data: note.content,
                 styleSheet: MarkdownStyleSheet(
-                  p: TextStyle(
+                  p: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 15,
                     height: 1.7,
@@ -390,8 +399,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     height: 1.3,
                   ),
                   strong: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
-                  em: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary),
-                  code: TextStyle(
+                  em: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                  code: const TextStyle(
                     backgroundColor: AppColors.surfaceVariant,
                     color: AppColors.primary,
                     fontFamily: 'monospace',
@@ -402,7 +411,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   codeblockPadding: const EdgeInsets.all(12),
-                  listBullet: TextStyle(color: AppColors.primary),
+                  listBullet: const TextStyle(color: AppColors.primary),
                   blockSpacing: 16,
                 ),
               ),
@@ -410,36 +419,37 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, LanguageProvider lang) {
     final now = DateTime.now();
     final diff = now.difference(date);
     
     if (diff.inDays == 0) {
       if (diff.inHours == 0) {
-        return '${diff.inMinutes}m ago';
+        return '${diff.inMinutes}${lang.translate('ago_m')}';
       }
-      return '${diff.inHours}h ago';
+      return '${diff.inHours}${lang.translate('ago_h')}';
     } else if (diff.inDays == 1) {
-      return 'Yesterday';
+      return lang.translate('yesterday');
     } else if (diff.inDays < 7) {
-      return '${diff.inDays}d ago';
+      return '${diff.inDays}${lang.translate('ago_d')}';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
 
   void _deleteNote(BuildContext context, Note note) {
+    final lang = context.read<LanguageProvider>();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: const RoundedRectangleBorder(), // No rounded corners
-        title: const Text("Delete note?"),
-        content: Text("Are you sure you want to delete \"${note.title}\"?"),
+        title: Text("${lang.translate('delete')} ${lang.translate('notes')}?"),
+        content: Text("${lang.translate('exit_confirm')} \"${note.title}\"?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(lang.translate('cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -448,7 +458,7 @@ class _NotesScreenState extends State<NotesScreen> {
               _closeNote(note);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: Text(lang.translate('delete'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -456,6 +466,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   void _showNoteDialog(BuildContext context, {Note? note}) {
+    final lang = context.read<LanguageProvider>();
     final titleController = TextEditingController(text: note?.title ?? '');
     final contentController = TextEditingController(text: note?.content ?? '');
 
@@ -464,7 +475,7 @@ class _NotesScreenState extends State<NotesScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: const RoundedRectangleBorder(), // No rounded corners
-        title: Text(note == null ? 'New Note' : 'Edit Note'),
+        title: Text(note == null ? lang.translate('new_note') : lang.translate('edit_note')),
         content: SizedBox(
           width: 600,
           height: 400,
@@ -472,8 +483,8 @@ class _NotesScreenState extends State<NotesScreen> {
             children: [
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(
-                  hintText: 'Title',
+                decoration: InputDecoration(
+                  hintText: lang.translate('title'),
                   border: InputBorder.none,
                 ),
                 style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
@@ -486,8 +497,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     Expanded(
                       child: TextField(
                         controller: contentController,
-                        decoration: const InputDecoration(
-                          hintText: 'Content (Markdown Supported)',
+                        decoration: InputDecoration(
+                          hintText: lang.translate('content_markdown'),
                           border: InputBorder.none,
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
@@ -504,7 +515,7 @@ class _NotesScreenState extends State<NotesScreen> {
                            valueListenable: contentController,
                            builder: (context, TextEditingValue val, child) {
                              return Markdown(
-                               data: val.text.isEmpty ? "Preview" : val.text,
+                               data: val.text.isEmpty ? lang.translate('preview') : val.text,
                                styleSheet: MarkdownStyleSheet(
                                  p: const TextStyle(color: AppColors.textPrimary),
                                ),
@@ -522,7 +533,7 @@ class _NotesScreenState extends State<NotesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(lang.translate('cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -539,12 +550,14 @@ class _NotesScreenState extends State<NotesScreen> {
                   note.content = contentController.text;
                   note.lastModified = DateTime.now();
                   Provider.of<DataProvider>(context, listen: false).updateNote(note);
-                  setState(() {}); // Refresh to show updated title in tab
+                  if (mounted) {
+                    setState(() {}); // Refresh to show updated title in tab
+                  }
                 }
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Save'),
+            child: Text(lang.translate('save')),
           ),
         ],
       ),

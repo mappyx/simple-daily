@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_selector/file_selector.dart';
 import '../models/project.dart';
 import '../providers/data_provider.dart';
+import '../providers/language_provider.dart';
 import '../utils/theme.dart';
 
 class KanbanBoard extends StatefulWidget {
@@ -96,6 +97,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
     DateTime? endDate;
     List<String> imagePaths = [];
 
+    final lang = context.read<LanguageProvider>();
     showDialog(
       context: context,
       builder: (context) {
@@ -104,7 +106,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
             return AlertDialog(
               backgroundColor: AppColors.surface,
               shape: const RoundedRectangleBorder(), // Rectangular Dialog
-              title: const Text("New Task"),
+              title: Text(lang.translate('add_task')),
               content: SizedBox(
                 width: 500,
                 child: SingleChildScrollView(
@@ -115,14 +117,14 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: titleController,
-                        decoration: const InputDecoration(
-                          hintText: "Task Title",
-                          labelText: "Title",
+                        decoration: InputDecoration(
+                          hintText: lang.translate('title'),
+                          labelText: lang.translate('title'),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
                         ),
                         autofocus: true,
                         style: const TextStyle(color: AppColors.textPrimary),
@@ -133,92 +135,87 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       TextField(
                         controller: descriptionController,
                         maxLines: 8, // Made larger
-                        decoration: const InputDecoration(
-                          hintText: "Detailed description...",
-                          labelText: "Description",
+                        decoration: InputDecoration(
+                          hintText: lang.translate('description'),
+                          labelText: lang.translate('description'),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           alignLabelWithHint: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
 
                       // Images section
-                      const Text("Images", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(lang.translate('add_images'), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (imagePaths.isNotEmpty)
-                            SizedBox(
-                              height: 80,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: imagePaths.length,
-                                itemBuilder: (context, index) {
-                                  return Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.only(right: 8),
-                                        width: 80,
-                                        height: 80,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.white24),
-                                        ),
-                                        child: InkWell(
-                                          onTap: () => _showImageFull(imagePaths[index]),
-                                          child: Image.file(File(imagePaths[index]), fit: BoxFit.cover),
-                                        ),
+                      if (imagePaths.isNotEmpty)
+                        SizedBox(
+                          height: 80,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: imagePaths.length,
+                            itemBuilder: (context, index) {
+                              return Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white24),
+                                    ),
+                                    child: InkWell(
+                                      onTap: () => _showImageFull(imagePaths[index]),
+                                      child: Image.file(File(imagePaths[index]), fit: BoxFit.cover),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 4,
+                                    top: 0,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setDialogState(() => imagePaths.removeAt(index));
+                                      },
+                                      child: const CircleAvatar(
+                                        radius: 10,
+                                        backgroundColor: Colors.black54,
+                                        child: Icon(Icons.close, size: 12, color: Colors.white),
                                       ),
-                                      Positioned(
-                                        right: 4,
-                                        top: 0,
-                                        child: InkWell(
-                                          onTap: () {
-                                            setDialogState(() => imagePaths.removeAt(index));
-                                          },
-                                          child: const CircleAvatar(
-                                            radius: 10,
-                                            backgroundColor: Colors.black54,
-                                            child: Icon(Icons.close, size: 12, color: Colors.white),
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  );
-                                },
-                              ),
-                            ),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              const XTypeGroup typeGroup = XTypeGroup(
-                                label: 'Images',
-                                extensions: ['jpg', 'png', 'jpeg'],
+                                    ),
+                                  )
+                                ],
                               );
-                              final List<XFile> files = await openFiles(acceptedTypeGroups: [typeGroup]);
-                              if (files.isNotEmpty) {
-                                setDialogState(() {
-                                  imagePaths.addAll(files.map((f) => f.path));
-                                });
-                              }
                             },
-                            icon: const Icon(Icons.add_a_photo, size: 16),
-                            label: const Text("Add Images"),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.primary),
-                              foregroundColor: AppColors.primary,
-                              shape: const RoundedRectangleBorder(),
-                            ),
                           ),
-                        ],
+                        ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          const XTypeGroup typeGroup = XTypeGroup(
+                            label: 'Images',
+                            extensions: ['jpg', 'png', 'jpeg'],
+                          );
+                          final List<XFile> files = await openFiles(acceptedTypeGroups: [typeGroup]);
+                          if (files.isNotEmpty) {
+                            setDialogState(() {
+                              imagePaths.addAll(files.map((f) => f.path));
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.add_a_photo, size: 16),
+                        label: Text(lang.translate('add_images')),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.primary),
+                          foregroundColor: AppColors.primary,
+                          shape: const RoundedRectangleBorder(),
+                        ),
                       ),
                       const SizedBox(height: 16),
 
                       // Scheduling Row
-                      const Text("Schedule (Automation)", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(lang.translate('schedule_automation'), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -231,35 +228,28 @@ class _KanbanBoardState extends State<KanbanBoard> {
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime(2030),
                                 );
-                                if (date != null) {
-                                  if (context.mounted) {
-                                    final time = await showTimePicker(
-                                      context: context,
-                                      initialTime: TimeOfDay.fromDateTime(startDate ?? DateTime.now()),
-                                    );
-                                    if (time != null) {
-                                      setDialogState(() {
-                                        startDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                                      });
-                                    }
+                                if (date != null && context.mounted) {
+                                  final time = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.fromDateTime(startDate ?? DateTime.now()),
+                                  );
+                                  if (time != null) {
+                                    setDialogState(() {
+                                      startDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                                    });
                                   }
                                 }
                               },
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white24),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: lang.translate('start_time'),
+                                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("Start Time", style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      startDate != null ? DateFormat('MM/dd HH:mm').format(startDate!) : "Set Start Time",
-                                      style: TextStyle(color: startDate != null ? AppColors.textPrimary : Colors.grey),
-                                    ),
-                                  ],
+                                child: Text(
+                                  startDate != null ? DateFormat('MM/dd HH:mm').format(startDate!) : lang.translate('start_time'),
+                                  style: TextStyle(color: startDate != null ? AppColors.textPrimary : Colors.grey),
                                 ),
                               ),
                             ),
@@ -274,35 +264,28 @@ class _KanbanBoardState extends State<KanbanBoard> {
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime(2030),
                                 );
-                                if (date != null) {
-                                  if (context.mounted) {
-                                    final time = await showTimePicker(
-                                      context: context,
-                                      initialTime: TimeOfDay.fromDateTime(endDate ?? DateTime.now()),
-                                    );
-                                    if (time != null) {
-                                      setDialogState(() {
-                                        endDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                                      });
-                                    }
+                                if (date != null && context.mounted) {
+                                  final time = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.fromDateTime(endDate ?? DateTime.now()),
+                                  );
+                                  if (time != null) {
+                                    setDialogState(() {
+                                      endDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                                    });
                                   }
                                 }
                               },
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white24),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: lang.translate('end_time'),
+                                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("End Time", style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      endDate != null ? DateFormat('MM/dd HH:mm').format(endDate!) : "Set End Time",
-                                      style: TextStyle(color: endDate != null ? AppColors.textPrimary : Colors.grey),
-                                    ),
-                                  ],
+                                child: Text(
+                                  endDate != null ? DateFormat('MM/dd HH:mm').format(endDate!) : lang.translate('end_time'),
+                                  style: TextStyle(color: endDate != null ? AppColors.textPrimary : Colors.grey),
                                 ),
                               ),
                             ),
@@ -312,13 +295,13 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       const SizedBox(height: 12),
 
                       // Automation: App Launch
-                      const Text("Automation", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(lang.translate('automation'), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: appPathController,
                         decoration: InputDecoration(
-                          hintText: "/path/to/application (e.g. /usr/bin/slack)",
-                          labelText: "App Path Execution",
+                          hintText: "Path (e.g. /usr/bin/slack)",
+                          labelText: lang.translate('app_path'),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           prefixIcon: const Icon(Icons.apps, size: 16),
@@ -349,11 +332,11 @@ class _KanbanBoardState extends State<KanbanBoard> {
                           Expanded(
                             child: DropdownButtonFormField<TaskPriority>(
                               value: selectedPriority,
-                              decoration: const InputDecoration(
-                                labelText: "Priority",
+                              decoration: InputDecoration(
+                                labelText: lang.translate('priority'),
                                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                               ),
                               dropdownColor: AppColors.surface,
                               items: TaskPriority.values.map((p) {
@@ -379,13 +362,13 @@ class _KanbanBoardState extends State<KanbanBoard> {
                       
                       TextField(
                         controller: tagsController,
-                        decoration: const InputDecoration(
-                          hintText: "Tags (comma separated)",
-                          labelText: "Tags",
+                        decoration: InputDecoration(
+                          hintText: lang.translate('tags'),
+                          labelText: lang.translate('tags'),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          prefixIcon: Icon(Icons.tag, size: 16),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+                          prefixIcon: const Icon(Icons.tag, size: 16),
+                          border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
                         ),
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
@@ -396,7 +379,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                  child: Text(lang.translate('cancel')),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -407,23 +390,25 @@ class _KanbanBoardState extends State<KanbanBoard> {
                           .where((e) => e.isNotEmpty)
                           .toList();
                       
+                      final newTask = Task.create(
+                        title: titleController.text,
+                        description: descriptionController.text,
+                        priority: selectedPriority,
+                        tags: tags,
+                        startDate: startDate,
+                        endDate: endDate,
+                        appPath: appPathController.text.isNotEmpty ? appPathController.text : null,
+                        imagePaths: imagePaths,
+                      );
                       setState(() {
-                        column.tasks.add(Task.create(
-                          title: titleController.text,
-                          description: descriptionController.text,
-                          priority: selectedPriority,
-                          tags: tags,
-                          startDate: startDate,
-                          endDate: endDate,
-                          appPath: appPathController.text.isEmpty ? null : appPathController.text,
-                          imagePaths: imagePaths,
-                        ));
+                        column.tasks.add(newTask);
                       });
                       _saveProject();
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text("Add"),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  child: Text(lang.translate('add'), style: const TextStyle(color: Colors.black)),
                 ),
               ],
             );

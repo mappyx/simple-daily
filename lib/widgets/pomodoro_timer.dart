@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../utils/theme.dart';
+import '../providers/language_provider.dart';
 
 class PomodoroTimer extends StatefulWidget {
   const PomodoroTimer({super.key});
@@ -52,6 +54,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   }
 
   void _showTimeUpDialog() {
+    final lang = context.read<LanguageProvider>();
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -63,7 +66,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
                Navigator.pop(context);
                _resetTimer();
              }, 
-             child: const Text("OK")
+             child: Text(lang.translate('close'))
           )
         ],
       ),
@@ -84,8 +87,9 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Tooltip(
-      message: "Temporizador Pomodoro: Enfócate 25 minutos y descansa. ¡Maximiza tu productividad!",
+      message: lang.translate('pomodoro_tooltip'),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         border: Border.all(color: AppColors.primary, width: 0.5),
@@ -117,7 +121,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
             ),
             const SizedBox(width: 8),
             Tooltip(
-              message: _isRunning ? "Pausar" : "Iniciar Sesión de Enfoque",
+              message: _isRunning ? lang.translate('pomodoro_pause') : lang.translate('pomodoro_play'),
               child: InkWell(
                 onTap: _toggleTimer,
                 child: Icon(
@@ -129,7 +133,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
             ),
             const SizedBox(width: 4),
             Tooltip(
-              message: "Reiniciar Temporizador",
+              message: lang.translate('pomodoro_reset'),
               child: InkWell(
                 onTap: _resetTimer,
                 child: const Icon(

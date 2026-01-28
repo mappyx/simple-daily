@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'providers/data_provider.dart';
+import 'providers/language_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/system_tray_service.dart';
@@ -40,6 +41,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: dataProvider),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: const SimpleDailyApp(),
     ),

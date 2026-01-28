@@ -6,11 +6,11 @@ import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/search_delegate.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/update_service.dart';
 import '../services/pdf_export_service.dart';
 import '../widgets/pomodoro_timer.dart';
 import '../providers/data_provider.dart';
+import '../providers/language_provider.dart';
 import 'package:provider/provider.dart';
 import 'notes_screen.dart';
 import 'projects_screen.dart';
@@ -38,24 +38,25 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
     final updateService = UpdateService();
      bool needsUpdate = await updateService.isUpdateAvailable();
     if (needsUpdate && mounted) {
+      final lang = context.read<LanguageProvider>();
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          title: const Text("Update Available"),
-          content: const Text("A new version of SimpleDaily is available."),
+          title: Text(lang.translate('update_available')),
+          content: Text(lang.translate('new_version_desc')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Later"),
+              child: Text(lang.translate('later')),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 updateService.performUpdate(context);
               },
-              child: const Text("Update now"),
+              child: Text(lang.translate('update_now')),
             ),
           ],
         ),
@@ -67,23 +68,24 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
   void onWindowClose() async {
     bool _isPreventClose = await windowManager.isPreventClose();
     if (_isPreventClose) {
+      final lang = context.read<LanguageProvider>();
       showDialog(
         context: context,
         builder: (_) {
           return AlertDialog(
              backgroundColor: AppColors.surface,
              shape: const RoundedRectangleBorder(),
-             title: const Text('Close SimpleDaily'),
-             content: const Text('Do you want to minimize to tray or exit?'),
+             title: Text(lang.translate('close_app_title')),
+             content: Text(lang.translate('close_app_body')),
              actions: [
                TextButton(
-                 child: const Text('Cancel'),
+                 child: Text(lang.translate('cancel')),
                  onPressed: () {
                    Navigator.of(context).pop();
                  },
                ),
                TextButton(
-                 child: const Text('Minimize to Tray'),
+                 child: Text(lang.translate('minimize_tray')),
                  onPressed: () async {
                    Navigator.of(context).pop();
                    await windowManager.hide();
@@ -91,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                ),
                ElevatedButton(
                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                 child: const Text('Exit', style: TextStyle(color: Colors.white)),
+                 child: Text(lang.translate('exit'), style: const TextStyle(color: Colors.white)),
                  onPressed: () async {
                    Navigator.of(context).pop();
                    await windowManager.destroy();
@@ -112,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Row(
@@ -145,9 +148,9 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                   ),
                   const SizedBox(height: 8),
                   // Navigation Items
-                  _buildNavItem(Icons.note_outlined, Icons.note, 0, 'Notes'),
-                  _buildNavItem(Icons.view_kanban_outlined, Icons.view_kanban, 1, 'Projects'),
-                  _buildNavItem(Icons.settings_outlined, Icons.settings, 2, 'Settings'),
+                  _buildNavItem(Icons.note_outlined, Icons.note, 0, lang.translate('notes')),
+                  _buildNavItem(Icons.view_kanban_outlined, Icons.view_kanban, 1, lang.translate('projects')),
+                  _buildNavItem(Icons.settings_outlined, Icons.settings, 2, lang.translate('settings')),
                   const Spacer(),
                 ],
               ),
@@ -185,13 +188,13 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     await pdfService.exportAllNotesToPdf(dataProvider.notes);
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('All notes exported to Downloads folder!')),
+                                        SnackBar(content: Text(lang.translate('export_success'))),
                                       );
                                     }
                                   } catch (e) {
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error exporting: $e')),
+                                        SnackBar(content: Text('${lang.translate('export_error')} $e')),
                                       );
                                     }
                                   }
@@ -207,19 +210,19 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                       
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Note "${note.title}" exported to Downloads!')),
+                                          SnackBar(content: Text('${lang.translate('notes')} "${note.title}" exportada!')),
                                         );
                                       }
                                     } catch (e) {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Error exporting note: $e')),
+                                          SnackBar(content: Text('${lang.translate('export_error')} note: $e')),
                                         );
                                       }
                                     }
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Please select a note to export')),
+                                      SnackBar(content: Text(lang.translate('select_note_export'))),
                                     );
                                   }
                                 }
@@ -231,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     children: [
                                       Icon(Icons.picture_as_pdf, size: 16, color: AppColors.textSecondary),
                                       const SizedBox(width: 12),
-                                      const Text('Export All'),
+                                      Text(lang.translate('export_all')),
                                     ],
                                   ),
                                 ),
@@ -241,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     children: [
                                       Icon(Icons.description, size: 16, color: AppColors.textSecondary),
                                       const SizedBox(width: 12),
-                                      const Text('Export Actual Note'),
+                                      Text(lang.translate('export_current')),
                                     ],
                                   ),
                                 ),
@@ -252,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     children: [
                                       Icon(Icons.minimize, size: 16, color: AppColors.textSecondary),
                                       const SizedBox(width: 12),
-                                      const Text('Minimize to Tray'),
+                                      Text(lang.translate('minimize_tray')),
                                     ],
                                   ),
                                   onTap: () {
@@ -265,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     children: [
                                       Icon(Icons.exit_to_app, size: 16, color: AppColors.error),
                                       const SizedBox(width: 12),
-                                      Text('Exit', style: TextStyle(color: AppColors.error)),
+                                      Text(lang.translate('exit'), style: TextStyle(color: AppColors.error)),
                                     ],
                                   ),
                                   onTap: () {
@@ -275,12 +278,12 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                         builder: (ctx) => AlertDialog(
                                           backgroundColor: AppColors.surface,
                                           shape: const RoundedRectangleBorder(),
-                                          title: const Text('Exit SimpleDaily?'),
-                                          content: const Text('Are you sure you want to exit?'),
+                                          title: Text('${lang.translate('exit')} SimpleDaily?'),
+                                          content: Text(lang.translate('exit_confirm')),
                                           actions: [
                                             TextButton(
                                               onPressed: () => Navigator.pop(ctx),
-                                              child: const Text('Cancel'),
+                                              child: Text(lang.translate('cancel')),
                                             ),
                                             ElevatedButton(
                                               onPressed: () {
@@ -288,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                                 windowManager.close();
                                               },
                                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                                              child: const Text('Exit', style: TextStyle(color: Colors.white)),
+                                              child: Text(lang.translate('exit'), style: const TextStyle(color: Colors.white)),
                                             ),
                                           ],
                                         ),
@@ -303,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Archive',
+                                      lang.translate('archive'),
                                       style: TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 13,
@@ -323,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                   builder: (ctx) => AlertDialog(
                                     backgroundColor: AppColors.surface,
                                     shape: const RoundedRectangleBorder(), // No rounded corners
-                                    title: const Text('About SimpleDaily'),
+                                    title: Text('${lang.translate('about')} SimpleDaily'),
                                     content: Text(
                                       'SimpleDaily v${AppConstants.currentVersion}\n\n'
                                       'A privacy-focused productivity app with notes, '
@@ -333,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Close'),
+                                        child: Text(lang.translate('close')),
                                       ),
                                     ],
                                   ),
@@ -344,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                 shape: const RoundedRectangleBorder(), // No rounded corners
                               ),
                               child: Text(
-                                'About Us',
+                                lang.translate('about_us'),
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 13,

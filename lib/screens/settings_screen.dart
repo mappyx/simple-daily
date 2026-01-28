@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../services/preferences_service.dart';
+import '../providers/language_provider.dart';
 import '../utils/theme.dart';
 import '../utils/constants.dart';
 
@@ -53,23 +55,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
     if (picked != null && picked != _reminderTime) {
-      setState(() {
-        _reminderTime = picked;
-      });
+      if (mounted) {
+        setState(() {
+          _reminderTime = picked;
+        });
+      }
       await _prefs.saveReminderTime(picked);
     }
   }
 
   Future<void> _toggleStartup(bool value) async {
-    setState(() {
-      _launchAtStartup = value;
-    });
+    if (mounted) {
+      setState(() {
+        _launchAtStartup = value;
+      });
+    }
     await _prefs.setLaunchAtStartup(value);
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
+    final lang = context.watch<LanguageProvider>();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -79,7 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Settings",
+              lang.translate('settings'),
               style: GoogleFonts.outfit(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -94,25 +101,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Column(
                 children: [
+                  // Daily Reminder
                   Tooltip(
-                    message: "Recibe un resumen diario de tus tareas pendientes a la hora que prefieras para organizar mejor tu día.",
+                    message: lang.translate('daily_reminder_tooltip'),
                     child: ListTile(
                       leading: const Icon(Icons.notifications_active_outlined, color: AppColors.primary),
-                      title: const Text("Daily Reminder"),
+                      title: Text(lang.translate('daily_reminder')),
                       subtitle: Text("Notify me at ${_reminderTime.format(context)}"),
                       trailing: TextButton(
                         onPressed: () => _selectTime(context),
-                        child: const Text("Change"),
+                        child: Text(lang.translate('change')),
                       ),
                     ),
                   ),
                   const Divider(height: 1, color: Colors.white10),
+                  
+                  // Startup
                   Tooltip(
-                    message: "Permite que SimpleDaily se inicie automáticamente al encender tu computadora para que no olvides tus tareas.",
+                    message: lang.translate('launch_startup_tooltip'),
                     child: ListTile(
                       leading: const Icon(Icons.rocket_launch_outlined, color: AppColors.secondary),
-                      title: const Text("Launch at Startup"),
-                      subtitle: const Text("Start SimpleDaily when you log in"),
+                      title: Text(lang.translate('launch_startup')),
+                      subtitle: Text(lang.translate('launch_startup')), // Usually subtitle would be something small
                       trailing: Switch(
                         value: _launchAtStartup,
                         activeColor: AppColors.secondary,
@@ -120,12 +130,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
+                  const Divider(height: 1, color: Colors.white10),
+
+                  // Language Switch
+                  ListTile(
+                    leading: const Icon(Icons.language, color: Colors.blueAccent),
+                    title: Text(lang.translate('language')),
+                    subtitle: Text(lang.currentLocale.languageCode == 'es' ? 'Español' : 'English'),
+                    trailing: Switch(
+                      value: lang.currentLocale.languageCode == 'en',
+                      activeColor: Colors.blueAccent,
+                      activeTrackColor: Colors.blueAccent.withOpacity(0.5),
+                      inactiveThumbColor: Colors.orangeAccent,
+                      inactiveTrackColor: Colors.orangeAccent.withOpacity(0.5),
+                      onChanged: (val) {
+                        lang.setLanguage(val ? 'en' : 'es');
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 32),
              Text(
-              "About",
+              lang.translate('about'),
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -149,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "Version ${AppConstants.currentVersion}",
+                    "${lang.translate('version')} ${AppConstants.currentVersion}",
                     style: TextStyle(color: Colors.grey[400]),
                   ),
                   const SizedBox(height: 8),
