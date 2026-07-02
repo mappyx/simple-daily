@@ -26,9 +26,9 @@ class SystemTrayService {
     // Handle clicks
     _systemTray.registerSystemTrayEventHandler((eventName) {
       if (eventName == kSystemTrayEventClick) {
-        Platform.isWindows ? _appWindow.show() : _systemTray.popUpContextMenu();
+        Platform.isWindows ? windowManager.show() : _systemTray.popUpContextMenu();
       } else if (eventName == kSystemTrayEventRightClick) {
-        Platform.isWindows ? _systemTray.popUpContextMenu() : _appWindow.show();
+        Platform.isWindows ? _systemTray.popUpContextMenu() : windowManager.show();
       }
     });
   }
@@ -40,9 +40,9 @@ class SystemTrayService {
   }) async {
     final Menu menu = Menu();
     await menu.buildFrom([
-      MenuItemLabel(label: showLabel, onClicked: (menuItem) => _appWindow.show()),
-      MenuItemLabel(label: hideLabel, onClicked: (menuItem) => _appWindow.hide()),
-      MenuItemLabel(label: exitLabel, onClicked: (menuItem) => _appWindow.close()),
+      MenuItemLabel(label: showLabel, onClicked: (menuItem) => windowManager.show()),
+      MenuItemLabel(label: hideLabel, onClicked: (menuItem) => windowManager.hide()),
+      MenuItemLabel(label: exitLabel, onClicked: (menuItem) => windowManager.destroy()),
     ]);
 
     await _systemTray.setContextMenu(menu);

@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> with WindowListener {
                                             ElevatedButton(
                                               onPressed: () {
                                                 Navigator.pop(ctx);
-                                                windowManager.close();
+                                                windowManager.destroy();
                                               },
                                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
                                               child: Text(lang.translate('exit'), style: const TextStyle(color: Colors.white)),
