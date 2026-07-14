@@ -14,7 +14,7 @@ class SystemTrayService {
 
   Future<void> init() async {
     String iconPath = 
-        Platform.isWindows ? 'windows/runner/resources/app_icon.ico' : 'assets/app_icon.png';
+        Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
     
     await _systemTray.initSystemTray(
       title: AppConstants.appName,
