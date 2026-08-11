@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import '../models/note.dart';
 import '../models/project.dart';
 import '../services/json_data_service.dart';
+import '../services/supabase_sync_service.dart';
+import '../services/preferences_service.dart';
 
 class DataProvider extends ChangeNotifier {
-  final JsonDataService _dataService = JsonDataService();
+  final JsonDataService _localDataService = JsonDataService();
+  final SupabaseSyncService _cloudSyncService = SupabaseSyncService();
+  final PreferencesService _prefs = PreferencesService();
 
   List<Note> _notes = [];
   List<Project> _projects = [];
@@ -43,8 +47,38 @@ class DataProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    _notes = await _dataService.loadNotes();
-    _projects = await _dataService.loadProjects();
+    final mode = await _prefs.getSyncMode();
+    final url = await _prefs.getSupabaseUrl();
+    final key = await _prefs.getSupabaseAnonKey();
+
+    bool cloudReady = false;
+    if (mode != 'local' && url != null && key != null && url.isNotEmpty && key.isNotEmpty) {
+      cloudReady = await _cloudSyncService.initialize(url, key);
+    }
+
+    if (mode == 'cloud' && cloudReady) {
+      _notes = await _cloudSyncService.loadNotes();
+      _projects = await _cloudSyncService.loadProjects();
+    } else if (mode == 'dual' && cloudReady) {
+      // For dual, load local first to show immediately, then fetch cloud and merge (or overwrite for simplicity)
+      _notes = await _localDataService.loadNotes();
+      _projects = await _localDataService.loadProjects();
+      
+      final cloudNotes = await _cloudSyncService.loadNotes();
+      final cloudProjects = await _cloudSyncService.loadProjects();
+      
+      // Simple merge: cloud overwrites local for this basic implementation.
+      if (cloudNotes.isNotEmpty) _notes = cloudNotes;
+      if (cloudProjects.isNotEmpty) _projects = cloudProjects;
+      
+      // Save merged to local
+      await _localDataService.saveNotes(_notes);
+      await _localDataService.saveProjects(_projects);
+    } else {
+      // Local mode or fallback
+      _notes = await _localDataService.loadNotes();
+      _projects = await _localDataService.loadProjects();
+    }
 
     _isLoading = false;
     notifyListeners();
@@ -73,7 +107,18 @@ class DataProvider extends ChangeNotifier {
   }
 
   Future<void> _saveNotes() async {
-    await _dataService.saveNotes(_notes);
+    final mode = await _prefs.getSyncMode();
+    
+    if (mode == 'local' || mode == 'dual') {
+      await _localDataService.saveNotes(_notes);
+    }
+    
+    if (mode == 'cloud' || mode == 'dual') {
+      if (_cloudSyncService.isInitialized) {
+        // Run cloud save asynchronously without blocking
+        _cloudSyncService.saveNotes(_notes);
+      }
+    }
   }
 
   // --- Projects Operations ---
@@ -99,7 +144,18 @@ class DataProvider extends ChangeNotifier {
   }
 
   Future<void> _saveProjects() async {
-    await _dataService.saveProjects(_projects);
+    final mode = await _prefs.getSyncMode();
+    
+    if (mode == 'local' || mode == 'dual') {
+      await _localDataService.saveProjects(_projects);
+    }
+    
+    if (mode == 'cloud' || mode == 'dual') {
+      if (_cloudSyncService.isInitialized) {
+        // Run cloud save asynchronously without blocking
+        _cloudSyncService.saveProjects(_projects);
+      }
+    }
   }
 
   Future<void> saveData() async {

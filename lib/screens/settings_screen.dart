@@ -17,6 +17,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final PreferencesService _prefs = PreferencesService();
   TimeOfDay _reminderTime = const TimeOfDay(hour: 9, minute: 0);
   bool _launchAtStartup = false;
+  String _supabaseUrl = '';
+  String _supabaseAnonKey = '';
+  String _syncMode = 'local';
+  
+  final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _keyController = TextEditingController();
+  
   bool _isLoading = true;
 
   @override
@@ -24,14 +31,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadSettings();
   }
+  
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _keyController.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadSettings() async {
     final time = await _prefs.getReminderTime();
     final launch = await _prefs.getLaunchAtStartup();
+    final url = await _prefs.getSupabaseUrl();
+    final key = await _prefs.getSupabaseAnonKey();
+    final mode = await _prefs.getSyncMode();
+    
     if (mounted) {
       setState(() {
         if (time != null) _reminderTime = time;
         _launchAtStartup = launch;
+        _supabaseUrl = url ?? '';
+        _supabaseAnonKey = key ?? '';
+        _syncMode = mode;
+        
+        _urlController.text = _supabaseUrl;
+        _keyController.text = _supabaseAnonKey;
+        
         _isLoading = false;
       });
     }
@@ -152,6 +177,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 32),
+            
+            // Cloud Sync Section
+            Text(
+              'Cloud Sync (Supabase)',
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: _syncMode,
+                    dropdownColor: AppColors.surface,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Sync Mode',
+                      labelStyle: TextStyle(color: Colors.white54),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'local', child: Text('Local Only')),
+                      DropdownMenuItem(value: 'cloud', child: Text('Cloud Only')),
+                      DropdownMenuItem(value: 'dual', child: Text('Dual (Collaborative & Offline)')),
+                    ],
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _syncMode = newValue;
+                        });
+                        _prefs.setSyncMode(newValue);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _urlController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Supabase URL',
+                      labelStyle: TextStyle(color: Colors.white54),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) => _prefs.setSupabaseUrl(value),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _keyController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Supabase Anon Key',
+                      labelStyle: TextStyle(color: Colors.white54),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) => _prefs.setSupabaseAnonKey(value),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            
              Text(
               lang.translate('about'),
               style: GoogleFonts.outfit(

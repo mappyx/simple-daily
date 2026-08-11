@@ -6,6 +6,9 @@ class PreferencesService {
   static const String keyReminderTimeHour = 'reminder_hour';
   static const String keyReminderTimeMinute = 'reminder_minute';
   static const String keyLaunchAtStartup = 'launch_startup';
+  static const String keySupabaseUrl = 'supabase_url';
+  static const String keySupabaseAnonKey = 'supabase_anon_key';
+  static const String keySyncMode = 'sync_mode'; // 'local', 'cloud', 'dual'
 
   Future<void> saveReminderTime(TimeOfDay time) async {
     final prefs = await SharedPreferences.getInstance();
@@ -45,6 +48,37 @@ class PreferencesService {
   Future<bool> getLaunchAtStartup() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(keyLaunchAtStartup) ?? false;
+  }
+
+  // Supabase Settings
+  Future<void> setSupabaseUrl(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keySupabaseUrl, url);
+  }
+
+  Future<String?> getSupabaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keySupabaseUrl);
+  }
+
+  Future<void> setSupabaseAnonKey(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keySupabaseAnonKey, key);
+  }
+
+  Future<String?> getSupabaseAnonKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keySupabaseAnonKey);
+  }
+
+  Future<void> setSyncMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keySyncMode, mode);
+  }
+
+  Future<String> getSyncMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keySyncMode) ?? 'local';
   }
 
   // Linux Autostart Logic

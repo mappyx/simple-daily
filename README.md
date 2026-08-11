@@ -39,7 +39,9 @@ Build:
 ```bash
 ./build_linux.sh
 ```
-Artifact: `build/deb/simple-daily-1.0.0-amd64.deb`
+Artifacts:
+- **AppImage** (Universal for Arch, Fedora, Ubuntu, Debian, etc.): `build/appimage/SimpleDaily-1.0.0-x86_64.AppImage`
+- **Debian / Ubuntu package**: `build/deb/simple-daily-1.0.0-amd64.deb`
 
 #### Windows
 Run the batch script:
