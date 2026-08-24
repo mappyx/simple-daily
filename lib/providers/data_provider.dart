@@ -162,4 +162,9 @@ class DataProvider extends ChangeNotifier {
     await _saveProjects();
     await _saveNotes();
   }
+
+  /// Public method to trigger UI refresh after external modifications
+  void refreshUI() {
+    notifyListeners();
+  }
 }

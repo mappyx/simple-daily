@@ -34,7 +34,9 @@ void main() async {
   });
 
   final dataProvider = DataProvider();
-  // Initialize Automation Service which keeps running
+  // Initialize Automation Service which keeps running via its internal timer.
+  // The reference is retained intentionally to prevent garbage collection.
+  // ignore: unused_local_variable
   final automationService = TaskAutomationService(dataProvider);
 
   runApp(

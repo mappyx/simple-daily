@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:system_tray/system_tray.dart';
 import 'package:window_manager/window_manager.dart';
 import '../utils/constants.dart';
@@ -10,7 +9,7 @@ class SystemTrayService {
   SystemTrayService._internal();
 
   final SystemTray _systemTray = SystemTray();
-  final AppWindow _appWindow = AppWindow();
+  bool _initialized = false;
 
   Future<void> init() async {
     String iconPath = 
@@ -20,6 +19,8 @@ class SystemTrayService {
       title: AppConstants.appName,
       iconPath: iconPath,
     );
+
+    _initialized = true;
 
     await updateMenu(showLabel: 'Show', hideLabel: 'Hide', exitLabel: 'Exit');
 
@@ -38,6 +39,8 @@ class SystemTrayService {
     required String hideLabel,
     required String exitLabel,
   }) async {
+    if (!_initialized) return;
+    
     final Menu menu = Menu();
     await menu.buildFrom([
       MenuItemLabel(label: showLabel, onClicked: (menuItem) => windowManager.show()),

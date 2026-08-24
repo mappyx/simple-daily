@@ -30,12 +30,15 @@ class LanguageProvider extends ChangeNotifier {
     Map<String, dynamic> jsonMap = json.decode(jsonString);
     _localizedStrings = jsonMap.map((key, value) => MapEntry(key, value.toString()));
     
-    // Update system tray icons/text if initialized
-    SystemTrayService().updateMenu(
-      showLabel: translate('show'),
-      hideLabel: translate('hide'),
-      exitLabel: translate('exit'),
-    );
+    // Schedule tray menu update after the current frame to avoid 
+    // interfering with window/tray initialization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemTrayService().updateMenu(
+        showLabel: translate('show'),
+        hideLabel: translate('hide'),
+        exitLabel: translate('exit'),
+      );
+    });
   }
 
   Future<void> setLanguage(String languageCode) async {

@@ -120,7 +120,7 @@ class TaskAutomationService {
       // Remove executed events from index
       _eventIndex.removeRange(0, eventsExecuted);
       
-      _dataProvider.notifyListeners();
+      _dataProvider.refreshUI();
       // Option C: Use debounced save instead of immediate write
       _dataProvider.saveDataDebounced(); 
     }
